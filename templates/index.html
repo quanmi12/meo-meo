@@ -13,7 +13,6 @@
             overflow-x: hidden;
         }
 
-        /* 🌌 nền glow */
         body::before {
             content: "";
             position: fixed;
@@ -61,7 +60,6 @@
             overflow: hidden;
         }
 
-        /* glow chạy */
         .card::before {
             content: "";
             position: absolute;
@@ -135,6 +133,34 @@
             to { text-shadow: 0 0 30px #22c55e; }
         }
 
+        /* 🔥 date picker */
+        .date-box {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        input[type="date"] {
+            padding: 8px;
+            border-radius: 8px;
+            border: none;
+            background: #0f172a;
+            color: #38bdf8;
+        }
+
+        button {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: none;
+            background: #38bdf8;
+            color: black;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+
+        button:hover {
+            background: #0ea5e9;
+        }
+
     </style>
 </head>
 
@@ -143,8 +169,16 @@
 <div class="container">
 
     <div class="top-box">
-        <h1>💰 MONEY TODAY</h1>
+        <h1>💰 MONEY</h1>
         <div class="money">${{ "%.2f"|format(total or 0) }}</div>
+
+        <!-- 🔥 chọn ngày -->
+        <div class="date-box">
+            <form method="get">
+                <input type="date" name="date" value="{{ selected_date }}">
+                <button type="submit">Xem</button>
+            </form>
+        </div>
     </div>
 
     <h2>🎮 GAME</h2>
@@ -170,10 +204,11 @@
 
 </div>
 
-<!-- 🔄 auto reload -->
+<!-- 🔄 auto reload KHÔNG mất ngày -->
 <script>
     setInterval(() => {
-        window.location.reload();
+        const url = new URL(window.location.href);
+        window.location.href = url.toString();
     }, 10000);
 </script>
 

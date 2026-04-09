@@ -1,145 +1,109 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <title>Boeing VIP Checker</title>
+<meta charset="UTF-8">
+<title>Boeing VIP Checker</title>
 
-    <style>
-        body {
-            margin: 0;
-            background: radial-gradient(circle at top, #020617, #000);
-            color: #e2e8f0;
-            font-family: 'Segoe UI', sans-serif;
-        }
+<style>
+body {
+    margin: 0;
+    background: #020617;
+    color: #e2e8f0;
+    font-family: 'Segoe UI', sans-serif;
+}
 
-        h1 {
-            text-align: center;
-            color: #38bdf8;
-            font-size: 40px;
-            margin-top: 20px;
-        }
+h1 {
+    text-align: center;
+    color: #38bdf8;
+}
 
-        h2 {
-            margin: 30px 20px 10px;
-        }
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 20px;
+}
 
-        .container {
-            max-width: 900px;
-            margin: auto;
-            padding: 20px;
-        }
+.card {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
 
-        .card {
-            background: rgba(15,23,42,0.7);
-            border: 1px solid rgba(56,189,248,0.3);
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
+.price {
+    color: #22c55e;
+    font-weight: bold;
+}
 
-        .row {
-            display: flex;
-            justify-content: space-between;
-        }
+/* bảng */
+.table {
+    width: 100%;
+    margin-top: 10px;
+    border-collapse: collapse;
+}
 
-        .price {
-            color: #22c55e;
-            font-weight: bold;
-        }
+.table th, .table td {
+    padding: 8px;
+    border-bottom: 1px solid #1e293b;
+    text-align: left;
+}
 
-        .count {
-            color: #94a3b8;
-            font-size: 14px;
-        }
-
-        .money {
-            font-size: 50px;
-            color: #22c55e;
-            text-align: center;
-        }
-
-        button {
-            background: #38bdf8;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            color: black;
-        }
-
-        input, select {
-            padding: 5px;
-            border-radius: 5px;
-            border: none;
-            margin-right: 5px;
-        }
-    </style>
+.table th {
+    color: #94a3b8;
+}
+</style>
 </head>
 
 <body>
 
 <div class="container">
 
-    <!-- MONEY -->
     <h1>💰 MONEY</h1>
-    <div class="money">${{ "%.2f"|format(total or 0) }}</div>
+    <h1 style="color:#22c55e">${{ "%.2f"|format(total or 0) }}</h1>
 
-    <!-- FILTER -->
-    <div style="text-align:center; margin-bottom:20px;">
-        <form method="get">
-            <input type="date" name="date" value="{{ selected_date }}">
-            
-            <select name="mode">
-                <option value="day" {% if mode=='day' %}selected{% endif %}>Theo ngày</option>
-                <option value="month" {% if mode=='month' %}selected{% endif %}>Cả tháng</option>
-            </select>
+    <!-- filter -->
+    <form method="get" style="text-align:center; margin-bottom:20px;">
+        <input type="date" name="date" value="{{ selected_date }}">
+        <select name="mode">
+            <option value="day" {% if mode=="day" %}selected{% endif %}>Theo ngày</option>
+            <option value="month" {% if mode=="month" %}selected{% endif %}>Theo tháng</option>
+        </select>
+        <button>Xem</button>
+    </form>
 
-            <button type="submit">Xem</button>
-        </form>
-    </div>
-
-    <!-- GAME -->
     <h2>🎮 GAME</h2>
 
     {% for game, d in result.items() %}
     <div class="card">
 
-        <!-- HEADER -->
-        <div class="row" onclick="toggleDetail('game{{ loop.index }}')" style="cursor:pointer;">
-            <div><b>{{ game }}</b></div>
+        <!-- header -->
+        <div style="display:flex; justify-content:space-between;">
+            <b>{{ game }}</b>
             <div class="price">${{ "%.2f"|format(d["price"]) }}</div>
         </div>
 
-        <!-- BUTTON -->
-        <div style="margin-top:10px;">
-            <button onclick="toggleDetail('game{{ loop.index }}')">
-                Xem chi tiết
-            </button>
-        </div>
+        <!-- bảng chi tiết -->
+        <table class="table">
+            <tr>
+                <th>Giá</th>
+                <th>pack</th>
+            </tr>
 
-        <!-- DETAIL -->
-        <div id="game{{ loop.index }}" style="display:none; margin-top:10px;">
-            <div class="count">Số lần: {{ d["count"] }}</div>
-            <div class="count">Tổng tiền: ${{ "%.2f"|format(d["price"]) }}</div>
-        </div>
+            {% for item in d["items"] %}
+            <tr>
+                <td>{{ item.price }}</td>
+                <td>{{ item.count }}</td>
+            </tr>
+            {% endfor %}
+        </table>
 
     </div>
     {% endfor %}
 
 </div>
 
-<!-- JS -->
 <script>
-function toggleDetail(id) {
-    const el = document.getElementById(id);
-    if (el.style.display === "none") {
-        el.style.display = "block";
-    } else {
-        el.style.display = "none";
-    }
-}
-
-// auto reload
 setInterval(() => {
     window.location.reload();
 }, 10000);

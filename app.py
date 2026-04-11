@@ -12,50 +12,53 @@ URL = "https://boeingvip.xyz/gambler/user/child/statistic"
 def get_vn_time():
     return datetime.utcnow() + timedelta(hours=7)
 
-# ===== FETCH DATA =====
+# ===== FETCH DATA (FIX THÁNG) =====
 def fetch_data(start_vn, end_vn):
     result = defaultdict(lambda: {"price": 0, "count": 0})
     total = 0
 
-    try:
-        start_utc = start_vn - timedelta(hours=7)
-        end_utc = end_vn - timedelta(hours=7)
+    current = start_vn
 
-        payload = {
-            "assigned": USER,
-            "startDate": start_utc.isoformat() + "Z",
-            "endDate": end_utc.isoformat() + "Z"
-        }
+    while current < end_vn:
+        next_day = current + timedelta(days=1)
 
-        headers = {
-            "User-Agent": "Mozilla/5.0"
-        }
+        try:
+            start_utc = current - timedelta(hours=7)
+            end_utc = next_day - timedelta(hours=7)
 
-        r = requests.post(URL, json=payload, headers=headers, timeout=10)
+            payload = {
+                "assigned": USER,
+                "startDate": start_utc.isoformat() + "Z",
+                "endDate": end_utc.isoformat() + "Z"
+            }
 
-        if r.status_code != 200:
-            print("API lỗi:", r.text)
-            return result, total
+            r = requests.post(URL, json=payload, timeout=10)
 
-        data = r.json()
-
-        for item in data.get("data", []):
-            try:
-                game = item.get("gameName", "Unknown")
-
-                price = float(str(item.get("price", "0")).replace("$", "").replace(",", ""))
-                count = int(item.get("count", 0))
-
-                money = price * count
-
-                result[game]["price"] += money
-                result[game]["count"] += count
-                total += money
-            except:
+            if r.status_code != 200:
+                current = next_day
                 continue
 
-    except Exception as e:
-        print("FETCH ERROR:", e)
+            data = r.json()
+
+            for item in data.get("data", []):
+                try:
+                    game = item.get("gameName", "Unknown")
+
+                    price = float(str(item.get("price", "0")).replace("$", "").replace(",", ""))
+                    count = int(item.get("count", 0))
+
+                    money = price * count
+
+                    result[game]["price"] += money
+                    result[game]["count"] += count
+                    total += money
+                except:
+                    continue
+
+        except:
+            pass
+
+        current = next_day
 
     return result, total
 
@@ -68,7 +71,7 @@ def index():
 
     now = get_vn_time()
 
-    # ===== THEO THÁNG =====
+    # ===== MONTH =====
     if mode == "month":
         if date_str:
             selected = datetime.strptime(date_str, "%Y-%m-%d")
@@ -77,7 +80,6 @@ def index():
 
         start_vn = datetime(selected.year, selected.month, 1)
 
-        # lấy ngày đầu tháng sau
         if selected.month == 12:
             end_vn = datetime(selected.year + 1, 1, 1)
         else:
@@ -85,7 +87,7 @@ def index():
 
         selected_date = selected.strftime("%Y-%m-%d")
 
-    # ===== THEO NGÀY =====
+    # ===== DAY =====
     else:
         if date_str:
             selected = datetime.strptime(date_str, "%Y-%m-%d")
@@ -97,7 +99,6 @@ def index():
 
         selected_date = start_vn.strftime("%Y-%m-%d")
 
-    # ===== FETCH =====
     result, total = fetch_data(start_vn, end_vn)
 
     return render_template(

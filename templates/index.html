@@ -32,7 +32,6 @@ h1 {
     margin-bottom: 20px;
 }
 
-/* FILTER */
 .filter {
     text-align: center;
     margin-bottom: 25px;
@@ -55,7 +54,6 @@ h1 {
     font-weight: bold;
 }
 
-/* CARD */
 .card {
     background: rgba(15,23,42,0.7);
     border: 1px solid rgba(56,189,248,0.3);
@@ -77,11 +75,6 @@ h1 {
     color: #22c55e;
     font-weight: bold;
 }
-
-.header {
-    cursor: pointer;
-    font-weight: bold;
-}
 </style>
 </head>
 
@@ -89,7 +82,6 @@ h1 {
 
 <div class="container">
 
-    <!-- MONEY -->
     <h1>💰 MONEY</h1>
     <div class="money">${{ "%.2f"|format(total or 0) }}</div>
 
@@ -110,13 +102,13 @@ h1 {
     <!-- GAME -->
     <div class="card">
 
-        <!-- HEADER (CLICK) -->
-        <div class="row header" onclick="toggleGame()">
+        <!-- HEADER -->
+        <div class="row" onclick="toggleGame()" style="cursor:pointer;">
             <div>🎮 Game A</div>
             <div class="price">${{ "%.2f"|format(total or 0) }}</div>
         </div>
 
-        <!-- LIST GAME -->
+        <!-- LIST -->
         <div id="gameList" style="display:none;">
             {% for game, d in result.items() %}
             <div class="row" style="border-top:1px solid rgba(255,255,255,0.05);">
@@ -130,16 +122,15 @@ h1 {
 
 </div>
 
-<!-- JS -->
 <script>
 function toggleGame() {
     const el = document.getElementById("gameList");
     el.style.display = (el.style.display === "none") ? "block" : "none";
 }
 
-// auto reload
+// chống cache + auto update
 setInterval(() => {
-    window.location.reload();
+    window.location.href = window.location.pathname + "?t=" + Date.now();
 }, 10000);
 </script>
 

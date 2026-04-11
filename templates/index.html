@@ -10,16 +10,35 @@
             background: radial-gradient(circle at top, #020617, #000);
             color: #e2e8f0;
             font-family: 'Segoe UI', sans-serif;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(56,189,248,0.15) 0%, transparent 70%);
+            animation: pulse 4s infinite;
+            z-index: -1;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.3; }
+            50% { opacity: 0.7; }
+            100% { opacity: 0.3; }
         }
 
         h1 {
             text-align: center;
             color: #38bdf8;
             font-size: 40px;
+            text-shadow: 0 0 20px #38bdf8;
             margin-top: 20px;
         }
 
         h2 {
+            color: #94a3b8;
             margin: 30px 20px 10px;
         }
 
@@ -35,44 +54,113 @@
             border-radius: 15px;
             padding: 15px;
             margin-bottom: 15px;
+            backdrop-filter: blur(10px);
+            transition: 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(120deg, transparent, rgba(56,189,248,0.3), transparent);
+            transform: rotate(25deg);
+            top: -50%;
+            left: -50%;
+            animation: shine 3s linear infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) rotate(25deg); }
+            100% { transform: translateX(100%) rotate(25deg); }
+        }
+
+        .card:hover {
+            transform: scale(1.03);
+            box-shadow: 0 0 30px rgba(56,189,248,0.5);
         }
 
         .row {
             display: flex;
             justify-content: space-between;
+            position: relative;
+            z-index: 1;
         }
 
         .price {
             color: #22c55e;
+            font-size: 20px;
             font-weight: bold;
+            text-shadow: 0 0 10px #22c55e;
         }
 
         .count {
-            color: #94a3b8;
-            font-size: 14px;
+            color: #64748b;
+            font-size: 13px;
+            margin-top: 5px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #1e293b;
+            transition: 0.2s;
+        }
+
+        .history-item:hover {
+            background: rgba(56,189,248,0.1);
+        }
+
+        .top-box {
+            text-align: center;
+            margin-bottom: 20px;
         }
 
         .money {
             font-size: 50px;
             color: #22c55e;
+            text-shadow: 0 0 20px #22c55e;
+            animation: glowMoney 2s infinite alternate;
+        }
+
+        @keyframes glowMoney {
+            from { text-shadow: 0 0 10px #22c55e; }
+            to { text-shadow: 0 0 30px #22c55e; }
+        }
+
+        /* 🔥 date picker */
+        .date-box {
             text-align: center;
+            margin-top: 10px;
+        }
+
+        input[type="date"] {
+            padding: 8px;
+            border-radius: 8px;
+            border: none;
+            background: #0f172a;
+            color: #38bdf8;
         }
 
         button {
-            background: #38bdf8;
+            padding: 8px 12px;
+            border-radius: 8px;
             border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
+            background: #38bdf8;
             color: black;
+            cursor: pointer;
+            margin-left: 5px;
         }
 
-        input, select {
-            padding: 5px;
-            border-radius: 5px;
-            border: none;
-            margin-right: 5px;
+        button:hover {
+            background: #0ea5e9;
         }
+
     </style>
 </head>
 
@@ -80,69 +168,48 @@
 
 <div class="container">
 
-    <!-- MONEY -->
-    <h1>💰 MONEY</h1>
-    <div class="money">${{ "%.2f"|format(total or 0) }}</div>
+    <div class="top-box">
+        <h1>💰 MONEY</h1>
+        <div class="money">${{ "%.2f"|format(total or 0) }}</div>
 
-    <!-- FILTER -->
-    <div style="text-align:center; margin-bottom:20px;">
-        <form method="get">
-            <input type="date" name="date" value="{{ selected_date }}">
-            
-            <select name="mode">
-                <option value="day" {% if mode=='day' %}selected{% endif %}>Theo ngày</option>
-                <option value="month" {% if mode=='month' %}selected{% endif %}>Cả tháng</option>
-            </select>
-
-            <button type="submit">Xem</button>
-        </form>
+        <!-- 🔥 chọn ngày -->
+        <div class="date-box">
+            <form method="get">
+                <input type="date" name="date" value="{{ selected_date }}">
+                <button type="submit">Xem</button>
+            </form>
+        </div>
     </div>
 
-    <!-- GAME -->
     <h2>🎮 GAME</h2>
 
     {% for game, d in result.items() %}
     <div class="card">
-
-        <!-- HEADER -->
-        <div class="row" onclick="toggleDetail('game{{ loop.index }}')" style="cursor:pointer;">
+        <div class="row">
             <div><b>{{ game }}</b></div>
             <div class="price">${{ "%.2f"|format(d["price"]) }}</div>
         </div>
+        <div class="count">Số lần: {{ d["count"] }}</div>
+    </div>
+    {% endfor %}
 
-        <!-- BUTTON -->
-        <div style="margin-top:10px;">
-            <button onclick="toggleDetail('game{{ loop.index }}')">
-                Xem chi tiết
-            </button>
-        </div>
+    <h2>📅 HISTORY</h2>
 
-        <!-- DETAIL -->
-        <div id="game{{ loop.index }}" style="display:none; margin-top:10px;">
-            <div class="count">Số lần: {{ d["count"] }}</div>
-            <div class="count">Tổng tiền: ${{ "%.2f"|format(d["price"]) }}</div>
-        </div>
-
+    {% for day, amount in history.items() %}
+    <div class="history-item">
+        <div>{{ day }}</div>
+        <div class="price">${{ "%.2f"|format(amount) }}</div>
     </div>
     {% endfor %}
 
 </div>
 
-<!-- JS -->
+<!-- 🔄 auto reload KHÔNG mất ngày -->
 <script>
-function toggleDetail(id) {
-    const el = document.getElementById(id);
-    if (el.style.display === "none") {
-        el.style.display = "block";
-    } else {
-        el.style.display = "none";
-    }
-}
-
-// auto reload
-setInterval(() => {
-    window.location.reload();
-}, 10000);
+    setInterval(() => {
+        const url = new URL(window.location.href);
+        window.location.href = url.toString();
+    }, 10000);
 </script>
 
 </body>

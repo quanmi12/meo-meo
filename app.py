@@ -22,11 +22,7 @@ def fetch_data(start_vn, end_vn):
         end_utc = end_vn - timedelta(hours=7)
 
         payload = {
-            "shopId": None,
-            "packageName": "",
             "assigned": USER,
-            "productId": "",
-            "action": "import_token",
             "startDate": start_utc.isoformat() + "Z",
             "endDate": end_utc.isoformat() + "Z"
         }
@@ -41,11 +37,7 @@ def fetch_data(start_vn, end_vn):
             print("API lỗi:", r.text)
             return result, total
 
-        try:
-            data = r.json()
-        except:
-            print("JSON lỗi")
-            return result, total
+        data = r.json()
 
         for item in data.get("data", []):
             try:
@@ -71,17 +63,49 @@ def fetch_data(start_vn, end_vn):
 # ===== ROUTE =====
 @app.route("/")
 def index():
+    date_str = request.args.get("date")
+    mode = request.args.get("mode", "day")
+
     now = get_vn_time()
 
-    start_vn = datetime(now.year, now.month, now.day)
-    end_vn = start_vn + timedelta(days=1)
+    # ===== THEO THÁNG =====
+    if mode == "month":
+        if date_str:
+            selected = datetime.strptime(date_str, "%Y-%m-%d")
+        else:
+            selected = now
 
+        start_vn = datetime(selected.year, selected.month, 1)
+
+        # lấy ngày đầu tháng sau
+        if selected.month == 12:
+            end_vn = datetime(selected.year + 1, 1, 1)
+        else:
+            end_vn = datetime(selected.year, selected.month + 1, 1)
+
+        selected_date = selected.strftime("%Y-%m-%d")
+
+    # ===== THEO NGÀY =====
+    else:
+        if date_str:
+            selected = datetime.strptime(date_str, "%Y-%m-%d")
+        else:
+            selected = now
+
+        start_vn = datetime(selected.year, selected.month, selected.day)
+        end_vn = start_vn + timedelta(days=1)
+
+        selected_date = start_vn.strftime("%Y-%m-%d")
+
+    # ===== FETCH =====
     result, total = fetch_data(start_vn, end_vn)
 
     return render_template(
         "index.html",
         result=result,
-        total=total
+        total=total,
+        selected_date=selected_date,
+        mode=mode
     )
 
 

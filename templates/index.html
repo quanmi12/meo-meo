@@ -11,7 +11,7 @@
 <style>
 body {
     margin: 0;
-    background: #020617;
+    background: radial-gradient(circle at top, #020617, #000);
     color: #e2e8f0;
     font-family: 'Segoe UI', sans-serif;
 }
@@ -19,30 +19,22 @@ body {
 .container {
     max-width: 900px;
     margin: auto;
-    padding: 30px;
-}
-
-.box {
-    background: #0f172a;
-    border-radius: 12px;
     padding: 20px;
 }
 
-.money {
-    text-align: right;
-    font-size: 28px;
-    color: #22c55e;
-    font-weight: bold;
+/* FILTER */
+form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 15px;
 }
 
-.name {
-    font-size: 38px;
-    margin-bottom: 10px;
-}
-
-.game-main span {
-    color: #ef4444;
-    font-weight: bold;
+input {
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
 }
 
 button {
@@ -53,6 +45,61 @@ button {
     cursor: pointer;
 }
 
+button:hover {
+    box-shadow: 0 0 12px #22c55e;
+}
+
+/* BOX */
+.box {
+    background: rgba(15,23,42,0.85);
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid rgba(34,197,94,0.3);
+}
+
+/* HEADER */
+.header {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+/* NAME */
+.name {
+    font-size: 32px;
+    color: #38bdf8;
+}
+
+/* MONEY */
+.money {
+    font-size: 32px;
+    color: #22c55e;
+    font-weight: bold;
+    position: relative;
+}
+
+/* + MONEY EFFECT */
+.plus-money {
+    position: absolute;
+    right: 0;
+    color: #22c55e;
+    font-size: 16px;
+    animation: flyUp 1s ease-out;
+}
+
+@keyframes flyUp {
+    0% { transform: translateY(10px); opacity: 0; }
+    50% { opacity: 1; }
+    100% { transform: translateY(-25px); opacity: 0; }
+}
+
+/* GAME */
+.game-main span {
+    color: #22c55e;
+    font-weight: bold;
+}
+
+/* DETAIL */
 .detail {
     display: none;
     margin-top: 15px;
@@ -61,15 +108,16 @@ button {
 .item {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 12px;
-    font-size: 14px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding-bottom: 5px;
 }
 
-input {
-    padding: 15px;
-    border-radius: 12px;
-    border: none;
-    margin-right: 10px;
+/* MOBILE */
+@media (max-width: 600px) {
+    .header {
+        flex-direction: column;
+    }
 }
 </style>
 </head>
@@ -79,45 +127,49 @@ input {
 <div class="container">
 
     <!-- FILTER -->
-    <form method="get" style="margin-bottom:15px;">
+    <form method="get">
         <input type="date" name="start_date" value="{{ start_date }}">
         <input id="start_time" name="start_time" value="{{ start_time }}">
         
         <input type="date" name="end_date" value="{{ end_date }}">
         <input id="end_time" name="end_time" value="{{ end_time }}">
 
-        <button type="submit">Làm mới</button>
+        <button type="submit">🔄 Làm mới</button>
     </form>
 
     <!-- BOX -->
     <div class="box">
 
-        <div style="display:flex; justify-content:space-between;">
+        <div class="header">
+
             <div>
-                <div class="name">Bảng Phong Thần </div>
+                <div class="name">👑 Bảng Phong Thần</div>
 
                 {% if result %}
                 {% set first_game = result.keys()|list|first %}
-                <div>
-                    {{ first_game }}<br>
-                    <span>${{ "%.2f"|format(result[first_game]["price"]) }}</span>
+                <div class="game-main">
+                    🎮 {{ first_game }}<br>
+                    <span>💰 ${{ "%.2f"|format(result[first_game]["price"]) }}</span>
                 </div>
                 {% endif %}
 
-                <button onclick="toggleDetail()">Xem chi tiết</button>
+                <button onclick="toggleDetail()">📊 Xem chi tiết</button>
             </div>
 
+            <!-- MONEY -->
             <div class="money">
-                ${{ "%.2f"|format(total or 0) }}
+                <span id="money"></span>
+                <div id="plusBox"></div>
             </div>
+
         </div>
 
         <!-- DETAIL -->
         <div class="detail" id="detailBox">
             {% for game, d in result.items() %}
             <div class="item">
-                <div>{{ game }}</div>
-                <div>${{ "%.2f"|format(d["price"]) }}</div>
+                <div>🎮 {{ game }}</div>
+                <div>💰 ${{ "%.2f"|format(d["price"]) }}</div>
             </div>
             {% endfor %}
         </div>
@@ -142,10 +194,39 @@ flatpickr("#end_time", {
     time_24hr: true
 });
 
+// TOGGLE
 function toggleDetail() {
     let box = document.getElementById("detailBox");
     box.style.display = box.style.display === "none" ? "block" : "none";
 }
+
+// ===== MONEY UPDATE (KHÔNG CHẠY) =====
+let target = {{ total or 0 }};
+let moneyEl = document.getElementById("money");
+let plusBox = document.getElementById("plusBox");
+
+// hiển thị tiền ngay
+moneyEl.innerText = "$" + target.toFixed(2);
+
+// lấy tiền cũ
+let old = localStorage.getItem("old_money");
+
+if (old !== null) {
+    old = parseFloat(old);
+    let diff = target - old;
+
+    if (diff > 0) {
+        let plus = document.createElement("div");
+        plus.className = "plus-money";
+        plus.innerText = "(+" + diff.toFixed(2) + ")";
+        plusBox.appendChild(plus);
+
+        setTimeout(() => plus.remove(), 1200);
+    }
+}
+
+// lưu lại
+localStorage.setItem("old_money", target);
 </script>
 
 </body>

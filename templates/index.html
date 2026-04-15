@@ -2,127 +2,103 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>MEO MEO PRO</title>
+<title>MEO MEO</title>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 <style>
-body {
-    margin: 0;
-    background: radial-gradient(circle,#020617,#000);
-    color: #e2e8f0;
-    font-family: 'Segoe UI';
+body{
+    margin:0;
+    background:#020617;
+    color:#e2e8f0;
+    font-family:'Segoe UI';
 }
 
 /* ===== CONTAINER ===== */
-.container {
-    max-width: 900px;
-    margin: auto;
-    padding: 15px;
+.container{
+    max-width:1000px;
+    margin:auto;
+    padding:15px;
 }
 
 /* ===== FILTER ===== */
-.filter {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 15px;
+form{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:15px;
 }
 
-.filter input {
-    flex: 1;
-    min-width: 120px;
-    padding: 14px;
-    border-radius: 12px;
-    border: none;
-    font-size: 16px;
+input{
+    padding:14px;
+    font-size:16px;
+    border-radius:12px;
+    border:none;
+    flex:1;
 }
 
-.filter button {
-    padding: 14px 18px;
-    border-radius: 12px;
-    border: none;
-    background: #22c55e;
-    font-weight: bold;
-    cursor: pointer;
+button{
+    padding:12px 18px;
+    border:none;
+    border-radius:10px;
+    background:#22c55e;
+    color:#000;
+    cursor:pointer;
 }
 
 /* ===== BOX ===== */
-.box {
-    background: #0f172a;
-    border-radius: 16px;
-    padding: 20px;
-    border: 1px solid #00f0ff44;
-    box-shadow: 0 0 20px #00f0ff33;
+.box{
+    background:#0f172a;
+    border-radius:16px;
+    padding:20px;
+    border:1px solid #00f0ff44;
+    box-shadow:0 0 20px #00f0ff33;
 }
 
-.header {
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
+/* ===== MONEY ===== */
+.money{
+    font-size:34px;
+    color:#00ff88;
+    font-weight:bold;
 }
 
-/* ===== TEXT ===== */
-.title {
-    font-size: 28px;
-}
-
-.money {
-    font-size: 32px;
-    color: #00ff88;
-    font-weight: bold;
-}
-
-/* ===== DETAIL ===== */
-.item {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 8px;
-}
-
-/* ===== BUTTON ===== */
-button {
-    background: #22c55e;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 10px;
-    cursor: pointer;
-}
-
-/* ===== MINI BUTTON ===== */
-.mini-btn {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: gold;
-    border-radius: 50%;
-    padding: 15px;
-    font-size: 20px;
+/* ===== MINI BTN ===== */
+.mini-btn{
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    background:gold;
+    border-radius:50%;
+    padding:16px;
+    font-size:20px;
+    cursor:pointer;
+    z-index:9999;
 }
 
 /* ===== POPUP ===== */
-.popup {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.8);
+.popup{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.85);
+    z-index:9998;
 }
 
-.popup-box {
-    background: #111;
-    margin: 40px auto;
-    padding: 20px;
-    width: 90%;
-    max-width: 350px;
-    border-radius: 12px;
-    text-align: center;
+.popup-box{
+    background:#111;
+    margin:60px auto;
+    padding:20px;
+    width:90%;
+    max-width:400px;
+    border-radius:12px;
+    text-align:center;
 }
 
 /* ===== MOBILE ===== */
-@media (max-width: 600px) {
-    .title { font-size: 22px; }
-    .money { font-size: 24px; }
+@media(max-width:600px){
+    .money{font-size:26px;}
+    h1{font-size:22px;}
 }
 </style>
 </head>
@@ -131,21 +107,19 @@ button {
 
 <div class="container">
 
-<!-- FILTER -->
-<form method="get" class="filter">
-    <input type="date" name="start_date" value="{{ start_date }}">
-    <input id="start_time" name="start_time" value="{{ start_time }}">
-    <input type="date" name="end_date" value="{{ end_date }}">
-    <input id="end_time" name="end_time" value="{{ end_time }}">
-    <button>🔄 Làm mới</button>
+<form method="get">
+<input type="date" name="start_date" value="{{ start_date }}">
+<input id="start_time" name="start_time" value="{{ start_time }}">
+<input type="date" name="end_date" value="{{ end_date }}">
+<input id="end_time" name="end_time" value="{{ end_time }}">
+<button>🔄 Làm mới</button>
 </form>
 
-<!-- BOX -->
 <div class="box">
+<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;">
 
-<div class="header">
 <div>
-<div class="title">👑 Bảng Phong Thần</div>
+<h1>👑 Bảng Phong Thần</h1>
 
 {% if result %}
 {% set first = result.keys()|list|first %}
@@ -155,17 +129,20 @@ ${{ "%.2f"|format(result[first]["price"]) }}
 </div>
 {% endif %}
 
-<button onclick="toggleDetail()">📊 Chi tiết</button>
+<button onclick="toggleDetail()">📊 Xem chi tiết</button>
 </div>
 
+<div>
 <div class="money">
 ${{ "%.2f"|format(total or 0) }}
 </div>
 </div>
 
-<div id="detailBox" style="display:none;">
+</div>
+
+<div id="detailBox" style="display:none;margin-top:15px;">
 {% for game, d in result.items() %}
-<div class="item">
+<div style="display:flex;justify-content:space-between;">
 <div>{{ game }}</div>
 <div>${{ "%.2f"|format(d["price"]) }}</div>
 </div>
@@ -173,7 +150,6 @@ ${{ "%.2f"|format(total or 0) }}
 </div>
 
 </div>
-
 </div>
 
 <!-- MINI BUTTON -->
@@ -182,32 +158,49 @@ ${{ "%.2f"|format(total or 0) }}
 <!-- MINI GAME -->
 <div class="popup" id="mini">
 <div class="popup-box">
-<h2>💰 Mini: <span id="miniMoney">10000</span></h2>
+<h2>💰 Mini Game: <span id="miniMoney">10000</span></h2>
 
-<button onclick="openTX()">🎲 Tài Xỉu</button>
+<button onclick="openTaiXiu()">🎲 Tài Xỉu</button>
+<button onclick="openPoker()">🃏 Poker</button>
+
+<br><br>
 <button onclick="closeMini()">Đóng</button>
 </div>
 </div>
 
 <!-- TÀI XỈU -->
-<div class="popup" id="tx">
+<div class="popup" id="taixiu">
 <div class="popup-box">
-
 <h3>🎲 Tài Xỉu</h3>
 
-<div id="dice">🎲 🎲 🎲</div>
+<button onclick="choose('tai')">TÀI</button>
+<button onclick="choose('xiu')">XỈU</button>
 
-<button onclick="setChoice('tai')">Tài</button>
-<button onclick="setChoice('xiu')">Xỉu</button>
+<br><br>
 
-<input id="betInput" value="1000" style="padding:10px; width:80%;">
+<input id="bet" value="1000">
 
-<button onclick="playTX()">Cược</button>
+<br><br>
 
-<div id="txResult"></div>
+<button onclick="playTX()">Đặt cược</button>
 
+<div id="resultTX" style="margin-top:10px;"></div>
+
+<br>
 <button onclick="closeTX()">Đóng</button>
+</div>
+</div>
 
+<!-- POKER -->
+<div class="popup" id="poker">
+<div class="popup-box">
+<h3>🃏 Poker</h3>
+
+<div id="cards" style="margin:15px;font-size:20px;">???</div>
+
+<button onclick="spinPoker()">Quay</button>
+<br><br>
+<button onclick="closePoker()">Đóng</button>
 </div>
 </div>
 
@@ -221,49 +214,88 @@ let d=document.getElementById("detailBox");
 d.style.display=d.style.display=="none"?"block":"none";
 }
 
-/* ===== MINI ===== */
-let money = localStorage.getItem("money") || 10000;
-document.getElementById("miniMoney").innerText = money;
+/* ===== MINI GAME RESET mỗi reload ===== */
+let money = 10000;
+let choice = "tai";
 
-function save(){
-localStorage.setItem("money", money);
+function updateMoney(){
+document.getElementById("miniMoney").innerText = money;
 }
 
-function openMini(){mini.style.display="block";}
-function closeMini(){mini.style.display="none";}
+/* ===== MINI ===== */
+function openMini(){
+document.getElementById("mini").style.display="block";
+updateMoney();
+}
+function closeMini(){
+document.getElementById("mini").style.display="none";
+}
 
 /* ===== TÀI XỈU ===== */
-let choice="tai";
-
-function setChoice(c){choice=c;}
-
-function openTX(){tx.style.display="block";}
-function closeTX(){tx.style.display="none";}
-
-function playTX(){
-
-let betValue = parseInt(document.getElementById("betInput").value);
-
-let d1=Math.floor(Math.random()*6+1);
-let d2=Math.floor(Math.random()*6+1);
-let d3=Math.floor(Math.random()*6+1);
-
-dice.innerText=`${d1} ${d2} ${d3}`;
-
-let sum=d1+d2+d3;
-let res=sum>=11?"tai":"xiu";
-
-if(res==choice){
-money = parseInt(money) + betValue;
-txResult.innerText="WIN 🎉 +" + betValue;
-}else{
-money = parseInt(money) - betValue;
-txResult.innerText="LOSE 💀 -" + betValue;
+function openTaiXiu(){
+document.getElementById("taixiu").style.display="block";
+}
+function closeTX(){
+document.getElementById("taixiu").style.display="none";
 }
 
-miniMoney.innerText=money;
-save();
+function choose(c){
+choice = c;
+}
 
+function playTX(){
+let bet = parseInt(document.getElementById("bet").value);
+
+if(bet > money){
+alert("Không đủ tiền!");
+return;
+}
+
+let dice =
+Math.floor(Math.random()*6+1)+
+Math.floor(Math.random()*6+1)+
+Math.floor(Math.random()*6+1);
+
+let res = (dice >= 11) ? "tai" : "xiu";
+
+if(res == choice){
+money += bet;
+}else{
+money -= bet;
+}
+
+updateMoney();
+
+document.getElementById("resultTX").innerText =
+"Kết quả: "+dice+" ("+res+")";
+}
+
+/* ===== POKER ===== */
+function openPoker(){
+document.getElementById("poker").style.display="block";
+}
+function closePoker(){
+document.getElementById("poker").style.display="none";
+}
+
+function spinPoker(){
+let cards=["A","K","Q","J","10","9","8"];
+let result="";
+
+for(let i=0;i<5;i++){
+result+=cards[Math.floor(Math.random()*cards.length)]+" ";
+}
+
+document.getElementById("cards").innerText=result;
+
+/* random thắng thua */
+if(Math.random() > 0.5){
+money += 500;
+}else{
+money -= 500;
+}
+
+updateMoney();
 }
 </script>
 

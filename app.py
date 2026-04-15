@@ -8,22 +8,19 @@ app = Flask(__name__)
 URL = "https://sdtvip1.xyz/gambler/user/child/statistic"
 USER = "sdt21"
 
-def fetch_data(mode="day", selected_date=None):
+def fetch_data(start_date, end_date, start_time, end_time):
 
-    # ===== FIX TIMEZONE (QUAN TRỌNG) =====
-    now = datetime.utcnow() + timedelta(hours=7)  # giờ VN
+    # ===== PARSE GIỜ VN =====
+    start_local = datetime.strptime(f"{start_date} {start_time}", "%Y-%m-%d %H:%M:%S")
+    end_local = datetime.strptime(f"{end_date} {end_time}", "%Y-%m-%d %H:%M:%S")
 
-    if selected_date:
-        now = datetime.strptime(selected_date, "%Y-%m-%d")
+    # ===== CONVERT UTC =====
+    start_utc = start_local - timedelta(hours=7)
+    end_utc = end_local - timedelta(hours=7)
 
-    if mode == "month":
-        start = datetime(now.year, now.month, 1)
-    else:
-        start = datetime(now.year, now.month, now.day)
-
-    # convert về UTC lại
-    start_utc = start - timedelta(hours=7)
-    end_utc = now - timedelta(hours=7)
+    # 🔥 FIX CHUẨN MILLISECOND (QUAN TRỌNG)
+    start_utc_str = start_utc.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    end_utc_str = end_utc.strftime("%Y-%m-%dT%H:%M:%S.999Z")
 
     payload = {
         "shopId": None,
@@ -31,8 +28,8 @@ def fetch_data(mode="day", selected_date=None):
         "assigned": USER,
         "productId": "",
         "action": "import_token",
-        "startDate": start_utc.isoformat() + "Z",
-        "endDate": end_utc.isoformat() + "Z"
+        "startDate": start_utc_str,
+        "endDate": end_utc_str
     }
 
     headers = {
@@ -44,50 +41,62 @@ def fetch_data(mode="day", selected_date=None):
         "X-Requested-With": "XMLHttpRequest"
     }
 
-    r = requests.post(URL, json=payload, headers=headers)
-    data = r.json().get("data", [])
+    try:
+        r = requests.post(URL, json=payload, headers=headers, timeout=10)
+        r.raise_for_status()
+        data = r.json().get("data", [])
+    except Exception as e:
+        print("API ERROR:", e)
+        data = []
 
-    result = defaultdict(lambda: {
-        "price": 0,
-        "count": 0,
-        "items": []
-    })
-
+    result = defaultdict(lambda: {"price": 0, "count": 0})
     total = 0
 
     for item in data:
-        game = item["gameName"]
+        game = item.get("gameName", "Unknown")
 
-        price = float(item["price"].replace("$", ""))
-        count = item["count"]
+        try:
+            price = float(item["price"].replace("$", "").replace(",", ""))
+            count = int(item["count"])
+        except:
+            price = 0
+            count = 0
+
+        # ✅ LOGIC ĐÚNG THEO API
         money = price * count
 
         result[game]["price"] += money
         result[game]["count"] += count
-
-        result[game]["items"].append({
-            "price": item["price"],
-            "count": count
-        })
-
         total += money
+
+    # sort giảm dần
+    result = dict(sorted(result.items(), key=lambda x: x[1]["price"], reverse=True))
 
     return result, total
 
 
 @app.route("/")
 def index():
-    mode = request.args.get("mode", "day")
-    selected_date = request.args.get("date")
 
-    result, total = fetch_data(mode, selected_date)
+    now = datetime.utcnow() + timedelta(hours=7)
+
+    start_date = request.args.get("start_date") or now.strftime("%Y-%m-%d")
+    end_date = request.args.get("end_date") or now.strftime("%Y-%m-%d")
+
+    start_time = request.args.get("start_time") or "00:00:00"
+    end_time = request.args.get("end_time") or "23:59:59"
+
+    result, total = fetch_data(start_date, end_date, start_time, end_time)
 
     return render_template(
         "index.html",
         result=result,
         total=total,
-        mode=mode,
-        selected_date=selected_date
+        start_date=start_date,
+        end_date=end_date,
+        start_time=start_time,
+        end_time=end_time,
+        user_name="Bú Bú"
     )
 
 

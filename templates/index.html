@@ -19,6 +19,7 @@ body{
     background:#020617;
     color:#e2e8f0;
     font-family:'Segoe UI',sans-serif;
+    overflow-x:hidden;
 }
 
 .container{
@@ -153,7 +154,7 @@ form button:hover{
 
 .battlefield{
     margin-top:25px;
-    height:420px;
+    height:450px;
 
     background:
     radial-gradient(circle at top,#0f172a,#020617);
@@ -379,10 +380,6 @@ function toggleDetail(id){
 
 }
 
-/* =========================
-   GAME
-========================= */
-
 window.onload = () => {
 
 const canvas = document.getElementById("battleCanvas");
@@ -402,11 +399,12 @@ window.addEventListener("resize", resizeCanvas);
 const player = {
 
     x:200,
-    y:250,
+    y:300,
 
-    speed:2,
-
+    vx:2,
     dir:1,
+
+    legAnim:0,
 
     cooldown:0
 
@@ -415,6 +413,27 @@ const player = {
 let bullets = [];
 let enemies = [];
 let particles = [];
+let stars = [];
+let boss = null;
+
+/* STARS */
+
+for(let i=0;i<120;i++){
+
+    stars.push({
+
+        x:Math.random()*canvas.width,
+        y:Math.random()*canvas.height,
+
+        size:Math.random()*3,
+
+        speed:0.3 + Math.random()*2
+
+    });
+
+}
+
+/* ENEMY */
 
 function spawnEnemy(){
 
@@ -434,6 +453,39 @@ function spawnEnemy(){
 
 setInterval(spawnEnemy,1000);
 
+/* BOSS */
+
+function spawnBoss(){
+
+    if(boss) return;
+
+    boss = {
+
+        x:canvas.width + 200,
+        y:canvas.height/2,
+
+        radius:60,
+
+        hp:100,
+
+        speed:0.5
+
+    };
+
+}
+
+setInterval(()=>{
+
+    if(Math.random() < 0.5){
+
+        spawnBoss();
+
+    }
+
+},15000);
+
+/* SHOOT */
+
 function shoot(target){
 
     let angle = Math.atan2(
@@ -448,8 +500,8 @@ function shoot(target){
         x:player.x,
         y:player.y - 15,
 
-        vx:Math.cos(angle) * 9,
-        vy:Math.sin(angle) * 9,
+        vx:Math.cos(angle) * 10,
+        vy:Math.sin(angle) * 10,
 
         radius:4
 
@@ -457,21 +509,25 @@ function shoot(target){
 
 }
 
-function createExplosion(x,y){
+/* EXPLOSION */
 
-    for(let i=0;i<30;i++){
+function createExplosion(x,y,color="#00ffff"){
+
+    for(let i=0;i<35;i++){
 
         particles.push({
 
             x,
             y,
 
-            vx:(Math.random()-0.5)*12,
-            vy:(Math.random()-0.5)*12,
+            vx:(Math.random()-0.5)*14,
+            vy:(Math.random()-0.5)*14,
 
             size:Math.random()*4 + 2,
 
-            life:40
+            life:45,
+
+            color
 
         });
 
@@ -479,9 +535,18 @@ function createExplosion(x,y){
 
 }
 
+/* STICKMAN */
+
 function drawStickman(x,y){
 
+    player.legAnim += 0.15;
+
+    let legMove = Math.sin(player.legAnim) * 10;
+    let jump = Math.sin(player.legAnim*2) * 6;
+
     ctx.save();
+
+    ctx.translate(0,jump);
 
     ctx.strokeStyle="#00ff88";
 
@@ -498,19 +563,21 @@ function drawStickman(x,y){
     ctx.lineTo(x,y+10);
 
     ctx.moveTo(x-12,y-5);
-    ctx.lineTo(x+12,y-5);
+    ctx.lineTo(x+18,y-10);
 
     ctx.moveTo(x,y+10);
-    ctx.lineTo(x-10,y+28);
+    ctx.lineTo(x-10-legMove,y+28);
 
     ctx.moveTo(x,y+10);
-    ctx.lineTo(x+10,y+28);
+    ctx.lineTo(x+10+legMove,y+28);
 
     ctx.stroke();
 
     ctx.restore();
 
 }
+
+/* GRID */
 
 function drawGrid(){
 
@@ -537,6 +604,49 @@ function drawGrid(){
 
 }
 
+/* STARS */
+
+function drawStars(){
+
+    stars.forEach(s=>{
+
+        s.x -= s.speed;
+
+        if(s.x < 0){
+
+            s.x = canvas.width;
+            s.y = Math.random()*canvas.height;
+
+        }
+
+        ctx.fillStyle="rgba(255,255,255,.8)";
+
+        ctx.fillRect(s.x,s.y,s.size,s.size);
+
+    });
+
+}
+
+/* WARNING */
+
+function drawBossWarning(){
+
+    if(!boss) return;
+
+    ctx.font="bold 48px Arial";
+
+    ctx.fillStyle="rgba(255,0,0,.2)";
+
+    ctx.fillText(
+        "⚠ WARNING BOSS ⚠",
+        canvas.width/2 - 220,
+        80
+    );
+
+}
+
+/* GAME LOOP */
+
 function animate(){
 
     requestAnimationFrame(animate);
@@ -546,9 +656,13 @@ function animate(){
     ctx.fillStyle="#020617";
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
+    drawStars();
+
     drawGrid();
 
-    player.x += player.speed * player.dir;
+    /* movement */
+
+    player.x += player.vx * player.dir;
 
     if(player.x > canvas.width - 150){
 
@@ -562,37 +676,33 @@ function animate(){
 
     }
 
+    /* aim */
+
     player.cooldown--;
 
-    if(enemies.length > 0 && player.cooldown <= 0){
+    let target = null;
 
-        let nearest = enemies[0];
+    if(boss){
 
-        let nearestDist = 999999;
+        target = boss;
 
-        enemies.forEach(e=>{
+    }else if(enemies.length > 0){
 
-            let dx = e.x - player.x;
-            let dy = e.y - player.y;
+        target = enemies[0];
 
-            let dist = Math.sqrt(dx*dx + dy*dy);
+    }
 
-            if(dist < nearestDist){
+    if(target && player.cooldown <= 0){
 
-                nearestDist = dist;
-                nearest = e;
+        shoot(target);
 
-            }
-
-        });
-
-        shoot(nearest);
-
-        player.cooldown = 12;
+        player.cooldown = 10;
 
     }
 
     drawStickman(player.x,player.y);
+
+    /* bullets */
 
     bullets.forEach((b,bi)=>{
 
@@ -612,18 +722,9 @@ function animate(){
 
         ctx.restore();
 
-        if(
-            b.x < -50 ||
-            b.x > canvas.width + 50 ||
-            b.y < -50 ||
-            b.y > canvas.height + 50
-        ){
-
-            bullets.splice(bi,1);
-
-        }
-
     });
+
+    /* enemies */
 
     enemies.forEach((e,ei)=>{
 
@@ -644,12 +745,6 @@ function animate(){
 
         ctx.beginPath();
         ctx.arc(e.x,e.y,e.radius,0,Math.PI*2);
-        ctx.fill();
-
-        ctx.fillStyle="#fff";
-
-        ctx.beginPath();
-        ctx.arc(e.x+5,e.y-5,3,0,Math.PI*2);
         ctx.fill();
 
         ctx.restore();
@@ -674,6 +769,98 @@ function animate(){
 
     });
 
+    /* boss */
+
+    if(boss){
+
+        drawBossWarning();
+
+        let dx = player.x - boss.x;
+        let dy = player.y - boss.y;
+
+        let angle = Math.atan2(dy,dx);
+
+        boss.x += Math.cos(angle) * boss.speed;
+        boss.y += Math.sin(angle) * boss.speed;
+
+        ctx.save();
+
+        ctx.shadowBlur=40;
+        ctx.shadowColor="#ff0000";
+
+        ctx.fillStyle="#ff0000";
+
+        ctx.beginPath();
+        ctx.arc(boss.x,boss.y,boss.radius,0,Math.PI*2);
+        ctx.fill();
+
+        ctx.restore();
+
+        /* HP */
+
+        ctx.fillStyle="#222";
+
+        ctx.fillRect(
+            canvas.width/2 - 150,
+            20,
+            300,
+            20
+        );
+
+        ctx.fillStyle="#ff0000";
+
+        ctx.fillRect(
+            canvas.width/2 - 150,
+            20,
+            boss.hp * 3,
+            20
+        );
+
+        bullets.forEach((b,bi)=>{
+
+            let dx = b.x - boss.x;
+            let dy = b.y - boss.y;
+
+            let dist = Math.sqrt(dx*dx + dy*dy);
+
+            if(dist < boss.radius){
+
+                boss.hp -= 2;
+
+                createExplosion(
+                    b.x,
+                    b.y,
+                    "#ff0000"
+                );
+
+                bullets.splice(bi,1);
+
+            }
+
+        });
+
+        if(boss.hp <= 0){
+
+            createExplosion(
+                boss.x,
+                boss.y,
+                "#ff0000"
+            );
+
+            createExplosion(
+                boss.x,
+                boss.y,
+                "#ffff00"
+            );
+
+            boss = null;
+
+        }
+
+    }
+
+    /* particles */
+
     particles.forEach((p,pi)=>{
 
         p.x += p.vx;
@@ -681,7 +868,9 @@ function animate(){
 
         p.life--;
 
-        ctx.fillStyle=`rgba(0,255,255,${p.life/40})`;
+        ctx.fillStyle=p.color;
+
+        ctx.globalAlpha = p.life / 45;
 
         ctx.fillRect(
             p.x,
@@ -689,6 +878,8 @@ function animate(){
             p.size,
             p.size
         );
+
+        ctx.globalAlpha = 1;
 
         if(p.life <= 0){
 

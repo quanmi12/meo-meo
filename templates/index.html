@@ -21,14 +21,14 @@ body{
     font-family:'Segoe UI',sans-serif;
 }
 
-/* ===== CONTAINER ===== */
 .container{
     max-width:1200px;
     margin:auto;
     padding:15px;
 }
 
-/* ===== FILTER ===== */
+/* FILTER */
+
 form{
     display:flex;
     flex-wrap:wrap;
@@ -65,7 +65,8 @@ form button:hover{
     background:#16a34a;
 }
 
-/* ===== BOX ===== */
+/* BOX */
+
 .box{
     background:#07152d;
     border-radius:20px;
@@ -79,7 +80,6 @@ form button:hover{
     inset 0 0 25px rgba(0,255,255,0.03);
 }
 
-/* ===== TOP ===== */
 .top{
     display:flex;
     justify-content:space-between;
@@ -88,7 +88,6 @@ form button:hover{
     flex-wrap:wrap;
 }
 
-/* ===== TITLE ===== */
 .title{
     font-size:32px;
     font-weight:800;
@@ -96,7 +95,6 @@ form button:hover{
     margin-bottom:18px;
 }
 
-/* ===== GAME ===== */
 .first-game{
     font-size:18px;
     color:#ffffff;
@@ -109,7 +107,6 @@ form button:hover{
     font-weight:800;
 }
 
-/* ===== MONEY ===== */
 .money{
     font-size:56px;
     font-weight:900;
@@ -119,7 +116,6 @@ form button:hover{
     0 0 8px rgba(0,255,136,0.35);
 }
 
-/* ===== BUTTON ===== */
 .btn{
     margin-top:20px;
     border:none;
@@ -138,7 +134,6 @@ form button:hover{
     transform:translateY(-2px);
 }
 
-/* ===== DETAIL ===== */
 .detail{
     display:none;
     margin-top:24px;
@@ -154,7 +149,33 @@ form button:hover{
     font-size:16px;
 }
 
-/* ===== MOBILE ===== */
+/* GAME */
+
+.battlefield{
+    margin-top:25px;
+    height:420px;
+
+    background:
+    radial-gradient(circle at top,#0f172a,#020617);
+
+    border-radius:24px;
+
+    border:1px solid rgba(0,255,255,.15);
+
+    overflow:hidden;
+    position:relative;
+
+    box-shadow:
+    0 0 25px rgba(0,255,255,.05),
+    inset 0 0 40px rgba(0,255,255,.03);
+}
+
+#battleCanvas{
+    width:100%;
+    height:100%;
+    display:block;
+}
+
 @media(max-width:700px){
 
     .container{
@@ -206,7 +227,6 @@ form button:hover{
 
 <div class="container">
 
-<!-- FILTER -->
 <form method="get">
 
 <input type="date" name="start_date" value="{{ start_date }}">
@@ -219,9 +239,7 @@ form button:hover{
 
 </form>
 
-<!-- ======================= -->
-<!-- VÍ 1 -->
-<!-- ======================= -->
+<!-- BOX 1 -->
 
 <div class="box">
 
@@ -273,9 +291,7 @@ ${{ "%.2f"|format(total or 0) }}
 
 </div>
 
-<!-- ======================= -->
-<!-- VÍ 2 -->
-<!-- ======================= -->
+<!-- BOX 2 -->
 
 <div class="box">
 
@@ -327,6 +343,12 @@ ${{ "%.2f"|format(total2 or 0) }}
 
 </div>
 
+<!-- GAME -->
+
+<div class="battlefield">
+    <canvas id="battleCanvas"></canvas>
+</div>
+
 </div>
 
 <script>
@@ -354,6 +376,331 @@ function toggleDetail(id){
     }else{
         box.style.display = "block";
     }
+
+}
+
+/* =========================
+   GAME
+========================= */
+
+window.onload = () => {
+
+const canvas = document.getElementById("battleCanvas");
+const ctx = canvas.getContext("2d");
+
+function resizeCanvas(){
+
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+
+}
+
+resizeCanvas();
+
+window.addEventListener("resize", resizeCanvas);
+
+const player = {
+
+    x:200,
+    y:250,
+
+    speed:2,
+
+    dir:1,
+
+    cooldown:0
+
+};
+
+let bullets = [];
+let enemies = [];
+let particles = [];
+
+function spawnEnemy(){
+
+    enemies.push({
+
+        x:canvas.width + 50,
+
+        y:Math.random() * (canvas.height - 120) + 60,
+
+        speed:1 + Math.random()*1.5,
+
+        radius:18
+
+    });
+
+}
+
+setInterval(spawnEnemy,1000);
+
+function shoot(target){
+
+    let angle = Math.atan2(
+
+        target.y - player.y,
+        target.x - player.x
+
+    );
+
+    bullets.push({
+
+        x:player.x,
+        y:player.y - 15,
+
+        vx:Math.cos(angle) * 9,
+        vy:Math.sin(angle) * 9,
+
+        radius:4
+
+    });
+
+}
+
+function createExplosion(x,y){
+
+    for(let i=0;i<30;i++){
+
+        particles.push({
+
+            x,
+            y,
+
+            vx:(Math.random()-0.5)*12,
+            vy:(Math.random()-0.5)*12,
+
+            size:Math.random()*4 + 2,
+
+            life:40
+
+        });
+
+    }
+
+}
+
+function drawStickman(x,y){
+
+    ctx.save();
+
+    ctx.strokeStyle="#00ff88";
+
+    ctx.shadowBlur=20;
+    ctx.shadowColor="#00ff88";
+
+    ctx.lineWidth=3;
+
+    ctx.beginPath();
+
+    ctx.arc(x,y-30,10,0,Math.PI*2);
+
+    ctx.moveTo(x,y-20);
+    ctx.lineTo(x,y+10);
+
+    ctx.moveTo(x-12,y-5);
+    ctx.lineTo(x+12,y-5);
+
+    ctx.moveTo(x,y+10);
+    ctx.lineTo(x-10,y+28);
+
+    ctx.moveTo(x,y+10);
+    ctx.lineTo(x+10,y+28);
+
+    ctx.stroke();
+
+    ctx.restore();
+
+}
+
+function drawGrid(){
+
+    ctx.strokeStyle="rgba(0,255,255,0.05)";
+    ctx.lineWidth=1;
+
+    for(let x=0;x<canvas.width;x+=40){
+
+        ctx.beginPath();
+        ctx.moveTo(x,0);
+        ctx.lineTo(x,canvas.height);
+        ctx.stroke();
+
+    }
+
+    for(let y=0;y<canvas.height;y+=40){
+
+        ctx.beginPath();
+        ctx.moveTo(0,y);
+        ctx.lineTo(canvas.width,y);
+        ctx.stroke();
+
+    }
+
+}
+
+function animate(){
+
+    requestAnimationFrame(animate);
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    ctx.fillStyle="#020617";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    drawGrid();
+
+    player.x += player.speed * player.dir;
+
+    if(player.x > canvas.width - 150){
+
+        player.dir = -1;
+
+    }
+
+    if(player.x < 120){
+
+        player.dir = 1;
+
+    }
+
+    player.cooldown--;
+
+    if(enemies.length > 0 && player.cooldown <= 0){
+
+        let nearest = enemies[0];
+
+        let nearestDist = 999999;
+
+        enemies.forEach(e=>{
+
+            let dx = e.x - player.x;
+            let dy = e.y - player.y;
+
+            let dist = Math.sqrt(dx*dx + dy*dy);
+
+            if(dist < nearestDist){
+
+                nearestDist = dist;
+                nearest = e;
+
+            }
+
+        });
+
+        shoot(nearest);
+
+        player.cooldown = 12;
+
+    }
+
+    drawStickman(player.x,player.y);
+
+    bullets.forEach((b,bi)=>{
+
+        b.x += b.vx;
+        b.y += b.vy;
+
+        ctx.save();
+
+        ctx.shadowBlur=20;
+        ctx.shadowColor="#00ff88";
+
+        ctx.fillStyle="#00ff88";
+
+        ctx.beginPath();
+        ctx.arc(b.x,b.y,b.radius,0,Math.PI*2);
+        ctx.fill();
+
+        ctx.restore();
+
+        if(
+            b.x < -50 ||
+            b.x > canvas.width + 50 ||
+            b.y < -50 ||
+            b.y > canvas.height + 50
+        ){
+
+            bullets.splice(bi,1);
+
+        }
+
+    });
+
+    enemies.forEach((e,ei)=>{
+
+        let dx = player.x - e.x;
+        let dy = player.y - e.y;
+
+        let angle = Math.atan2(dy,dx);
+
+        e.x += Math.cos(angle) * e.speed;
+        e.y += Math.sin(angle) * e.speed;
+
+        ctx.save();
+
+        ctx.shadowBlur=25;
+        ctx.shadowColor="#ff3b5c";
+
+        ctx.fillStyle="#ff3b5c";
+
+        ctx.beginPath();
+        ctx.arc(e.x,e.y,e.radius,0,Math.PI*2);
+        ctx.fill();
+
+        ctx.fillStyle="#fff";
+
+        ctx.beginPath();
+        ctx.arc(e.x+5,e.y-5,3,0,Math.PI*2);
+        ctx.fill();
+
+        ctx.restore();
+
+        bullets.forEach((b,bi)=>{
+
+            let dx = b.x - e.x;
+            let dy = b.y - e.y;
+
+            let dist = Math.sqrt(dx*dx + dy*dy);
+
+            if(dist < e.radius){
+
+                createExplosion(e.x,e.y);
+
+                enemies.splice(ei,1);
+                bullets.splice(bi,1);
+
+            }
+
+        });
+
+    });
+
+    particles.forEach((p,pi)=>{
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        p.life--;
+
+        ctx.fillStyle=`rgba(0,255,255,${p.life/40})`;
+
+        ctx.fillRect(
+            p.x,
+            p.y,
+            p.size,
+            p.size
+        );
+
+        if(p.life <= 0){
+
+            particles.splice(pi,1);
+
+        }
+
+    });
+
+}
+
+animate();
 
 }
 

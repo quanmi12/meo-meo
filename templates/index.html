@@ -157,12 +157,10 @@ form button:hover{
     height:450px;
 
     background:
-    radial-gradient(circle at top,#0f172a,#020617);
+    linear-gradient(to bottom, #1e1b4b 0%, #111827 15%, #030712 100%);
 
     border-radius:24px;
-
-    border:1px solid rgba(0,255,255,.15);
-
+    border:1px solid rgba(0,255,255,.2);
     overflow:hidden;
     position:relative;
 
@@ -240,8 +238,6 @@ form button:hover{
 
 </form>
 
-<!-- BOX 1 -->
-
 <div class="box">
 
 <div class="top">
@@ -291,8 +287,6 @@ ${{ "%.2f"|format(total or 0) }}
 </div>
 
 </div>
-
-<!-- BOX 2 -->
 
 <div class="box">
 
@@ -344,8 +338,6 @@ ${{ "%.2f"|format(total2 or 0) }}
 
 </div>
 
-<!-- GAME -->
-
 <div class="battlefield">
     <canvas id="battleCanvas"></canvas>
 </div>
@@ -386,509 +378,460 @@ const canvas = document.getElementById("battleCanvas");
 const ctx = canvas.getContext("2d");
 
 function resizeCanvas(){
-
     canvas.width = canvas.offsetWidth;
     canvas.height = canvas.offsetHeight;
-
 }
-
 resizeCanvas();
-
 window.addEventListener("resize", resizeCanvas);
 
-const player = {
+// --- KHỞI TẠO BIẾN GAME ĐÀO VÀNG ---
+let score = 0;
+let targetScore = 650;
+let level = 1;
 
-    x:200,
-    y:300,
-
-    vx:2,
-    dir:1,
-
-    legAnim:0,
-
-    cooldown:0
-
+const miner = {
+    x: 0, // Sẽ cập nhật động theo tâm canvas
+    y: 65,
+    armAnim: 0
 };
 
-let bullets = [];
-let enemies = [];
-let particles = [];
-let stars = [];
-let boss = null;
+const hook = {
+    x: 0,
+    y: 65,
+    angle: 0,
+    speed: 2.5,
+    angleDir: 1,
+    length: 25,
+    state: "swing", // swing, extend, retract
+    attachedItem: null,
+    baseSpeed: 5,
+    extendSpeed: 7
+};
 
-/* STARS */
+let items = [];
+let scorePopups = [];
 
-for(let i=0;i<120;i++){
+// Hàm tạo vật phẩm ngẫu nhiên dưới lòng đất
+function generateItems() {
+    items = [];
+    
+    // Tăng mục tiêu theo level
+    targetScore = 500 + level * 150;
 
-    stars.push({
-
-        x:Math.random()*canvas.width,
-        y:Math.random()*canvas.height,
-
-        size:Math.random()*3,
-
-        speed:0.3 + Math.random()*2
-
-    });
-
-}
-
-/* ENEMY */
-
-function spawnEnemy(){
-
-    enemies.push({
-
-        x:canvas.width + 50,
-
-        y:Math.random() * (canvas.height - 120) + 60,
-
-        speed:1 + Math.random()*1.5,
-
-        radius:18
-
-    });
-
-}
-
-setInterval(spawnEnemy,1000);
-
-/* BOSS */
-
-function spawnBoss(){
-
-    if(boss) return;
-
-    boss = {
-
-        x:canvas.width + 200,
-        y:canvas.height/2,
-
-        radius:60,
-
-        hp:100,
-
-        speed:0.5
-
-    };
-
-}
-
-setInterval(()=>{
-
-    if(Math.random() < 0.5){
-
-        spawnBoss();
-
-    }
-
-},15000);
-
-/* SHOOT */
-
-function shoot(target){
-
-    let angle = Math.atan2(
-
-        target.y - player.y,
-        target.x - player.x
-
-    );
-
-    bullets.push({
-
-        x:player.x,
-        y:player.y - 15,
-
-        vx:Math.cos(angle) * 10,
-        vy:Math.sin(angle) * 10,
-
-        radius:4
-
-    });
-
-}
-
-/* EXPLOSION */
-
-function createExplosion(x,y,color="#00ffff"){
-
-    for(let i=0;i<35;i++){
-
-        particles.push({
-
-            x,
-            y,
-
-            vx:(Math.random()-0.5)*14,
-            vy:(Math.random()-0.5)*14,
-
-            size:Math.random()*4 + 2,
-
-            life:45,
-
-            color
-
+    // Tạo Vàng (Gold)
+    let goldCount = 5 + Math.floor(Math.random() * 4);
+    for(let i=0; i<goldCount; i++) {
+        let sizeRand = Math.random();
+        let radius = sizeRand < 0.4 ? 12 : (sizeRand < 0.8 ? 22 : 35); // Vàng nhỏ, vừa, lớn
+        items.push({
+            x: Math.random() * (canvas.width - 80) + 40,
+            y: Math.random() * (canvas.height - 160) + 120,
+            type: "gold",
+            radius: radius,
+            weight: radius * 0.12, 
+            value: Math.floor(radius * 4.5)
         });
-
     }
 
+    // Tạo Đá (Stone)
+    let stoneCount = 3 + Math.floor(Math.random() * 3);
+    for(let i=0; i<stoneCount; i++) {
+        let radius = 18 + Math.random() * 16;
+        items.push({
+            x: Math.random() * (canvas.width - 80) + 40,
+            y: Math.random() * (canvas.height - 160) + 120,
+            type: "stone",
+            radius: radius,
+            weight: radius * 0.35, // Đá cực kỳ nặng, kéo rất chậm
+            value: Math.floor(radius * 0.4)
+        });
+    }
+
+    // Tạo Túi Quà Bí Ẩn (?)
+    let giftCount = 1 + Math.floor(Math.random() * 2);
+    for(let i=0; i<giftCount; i++) {
+        items.push({
+            x: Math.random() * (canvas.width - 80) + 40,
+            y: Math.random() * (canvas.height - 160) + 120,
+            type: "gift",
+            radius: 14,
+            weight: 1.5, // Khá nhẹ
+            value: Math.random() > 0.5 ? 100 : 250 // Quà ngẫu nhiên tiền ít hoặc nhiều
+        });
+    }
+
+    // Tạo Kim Cương (Diamond)
+    let diamondCount = 1 + Math.floor(Math.random() * 2);
+    for(let i=0; i<diamondCount; i++) {
+        items.push({
+            x: Math.random() * (canvas.width - 80) + 40,
+            y: Math.random() * (canvas.height - 160) + 120,
+            type: "diamond",
+            radius: 9,
+            weight: 0.8, // Kéo siêu nhanh
+            value: 350
+        });
+    }
+
+    // Tránh việc các vật phẩm bị dính chồng lên nhau quá mức ở lúc khởi tạo
+    for (let i = 0; i < items.length; i++) {
+        for (let j = i + 1; j < items.length; j++) {
+            let dx = items[i].x - items[j].x;
+            let dy = items[i].y - items[j].y;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist < items[i].radius + items[j].radius) {
+                items[j].x = Math.random() * (canvas.width - 80) + 40;
+                items[j].y = Math.random() * (canvas.height - 160) + 120;
+            }
+        }
+    }
 }
 
-/* STICKMAN */
+generateItems();
 
-function drawStickman(x,y){
+// --- LOGIC AI TỰ ĐỘNG NHẮM BẮN (AUTO AI) ---
+function runGoldMinerAI() {
+    if (hook.state !== "swing") return;
 
-    player.legAnim += 0.15;
+    // Tính toán vị trí gốc ngàm
+    let startX = canvas.width / 2;
+    let startY = miner.y;
 
-    let legMove = Math.sin(player.legAnim) * 10;
-    let jump = Math.sin(player.legAnim*2) * 6;
+    // AI quét xem góc hiện tại của dây có đi qua vật phẩm nào không
+    for (let item of items) {
+        let dx = item.x - startX;
+        let dy = item.y - startY;
+        
+        // Góc từ ngàm đến vật phẩm
+        let targetAngle = Math.atan2(dx, dy); 
+
+        // Khoảng cách sai số góc cho phép bắn (Vật phẩm to dễ trúng, nhỏ khó trúng)
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        let allowedError = Math.atan2(item.radius, dist) * 0.85; 
+
+        // Tránh bắn cục đá nếu có lựa chọn khác tốt hơn (AI thông minh né đá)
+        if (item.type === "stone" && item.radius > 25 && Math.random() < 0.7) {
+            continue; 
+        }
+
+        // Nếu góc lắc trùng khớp góc vật phẩm -> PHÓNG NGÀM!
+        if (Math.abs(hook.angle - targetAngle) < allowedError) {
+            hook.state = "extend";
+            break;
+        }
+    }
+}
+
+// --- VẼ ĐỒ HỌA VECTOR CANVAS ---
+
+// 1. Vẽ giao diện thông số trên cùng (Top Bar)
+function drawTopBar() {
+    // Đường ngăn cách mặt đất
+    ctx.strokeStyle = "rgba(0, 255, 255, 0.25)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, 65);
+    ctx.lineTo(canvas.width, 65);
+    ctx.stroke();
+
+    ctx.font = "bold 15px 'Segoe UI', sans-serif";
+    
+    // Tiền hiện tại
+    ctx.fillStyle = "#00ff88";
+    ctx.fillText("Tien: $" + score, 20, 30);
+    
+    // Mục tiêu vượt ải
+    ctx.fillStyle = "#e2e8f0";
+    ctx.fillText("Muc tieu: $" + targetScore, 20, 52);
+
+    // Cấp độ hiện tại (Level)
+    ctx.fillStyle = "#00bfff";
+    ctx.textAlign = "right";
+    ctx.fillText("Cap: " + level, canvas.width - 20, 40);
+    ctx.textAlign = "left";
+}
+
+// 2. Vẽ Ông già người que (Stickman Miner)
+function drawMiner() {
+    let mx = canvas.width / 2;
+    let my = miner.y;
 
     ctx.save();
+    ctx.strokeStyle = "#00ff88";
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = "#00ff88";
+    ctx.lineWidth = 3;
+    ctx.lineCap = "round";
 
-    ctx.translate(0,jump);
+    // Cabin máy kéo nhỏ xinh màu Neon
+    ctx.strokeStyle = "rgba(0, 255, 255, 0.4)";
+    ctx.strokeRect(mx - 20, my - 45, 40, 45);
 
-    ctx.strokeStyle="#00ff88";
-
-    ctx.shadowBlur=20;
-    ctx.shadowColor="#00ff88";
-
-    ctx.lineWidth=3;
-
+    // Thân người que ngồi lái
+    ctx.strokeStyle = "#e2e8f0";
     ctx.beginPath();
-
-    ctx.arc(x,y-30,10,0,Math.PI*2);
-
-    ctx.moveTo(x,y-20);
-    ctx.lineTo(x,y+10);
-
-    ctx.moveTo(x-12,y-5);
-    ctx.lineTo(x+18,y-10);
-
-    ctx.moveTo(x,y+10);
-    ctx.lineTo(x-10-legMove,y+28);
-
-    ctx.moveTo(x,y+10);
-    ctx.lineTo(x+10+legMove,y+28);
-
+    ctx.arc(mx, my - 30, 6, 0, Math.PI * 2); // Đầu
+    ctx.moveTo(mx, my - 24); ctx.lineTo(mx, my - 8); // Lưng
+    
+    // Tay quay tời (chuyển động khi kéo đồ)
+    let armOffset = (hook.state === "retract") ? Math.sin(miner.armAnim) * 10 : 0;
+    ctx.moveTo(mx, my - 18);
+    ctx.lineTo(mx - 12, my - 15 + armOffset);
     ctx.stroke();
 
     ctx.restore();
-
 }
 
-/* GRID */
+// 3. Vẽ dây cáp và ngàm kẹp (Hook)
+function drawHook() {
+    let startX = canvas.width / 2;
+    let startY = miner.y;
 
-function drawGrid(){
+    // Tính tọa độ đầu ngàm kẹp dựa vào chiều dài dây và góc quay
+    let endX = startX + Math.sin(hook.angle) * hook.length;
+    let endY = startY + Math.cos(hook.angle) * hook.length;
 
-    ctx.strokeStyle="rgba(0,255,255,0.05)";
-    ctx.lineWidth=1;
+    // Vẽ Dây cáp Neon rực rỡ
+    ctx.save();
+    ctx.strokeStyle = "#ffffff";
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = "#ffffff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
 
-    for(let x=0;x<canvas.width;x+=40){
+    // Vẽ Ngàm kẹp (Cái móc) dạng lưỡi hái đôi Cyberpunk
+    ctx.translate(endX, endY);
+    ctx.rotate(-hook.angle);
+    ctx.strokeStyle = "#00ffff";
+    ctx.shadowColor = "#00ffff";
+    ctx.shadowBlur = 12;
+    ctx.lineWidth = 3;
 
-        ctx.beginPath();
-        ctx.moveTo(x,0);
-        ctx.lineTo(x,canvas.height);
-        ctx.stroke();
+    ctx.beginPath();
+    // Móc trái
+    ctx.moveTo(0, 0);
+    ctx.arc(-6, 6, 8, -Math.PI/2, Math.PI/4, false);
+    // Móc phải
+    ctx.moveTo(0, 0);
+    ctx.arc(6, 6, 8, -Math.PI/2, Math.PI*3/4, true);
+    
+    ctx.stroke();
+    ctx.restore();
 
-    }
-
-    for(let y=0;y<canvas.height;y+=40){
-
-        ctx.beginPath();
-        ctx.moveTo(0,y);
-        ctx.lineTo(canvas.width,y);
-        ctx.stroke();
-
-    }
-
+    // Đồng bộ tọa độ thực tế của đầu ngàm để tính va chạm vật lý
+    hook.x = endX;
+    hook.y = endY;
 }
 
-/* STARS */
+// 4. Vẽ các vật thể vàng bạc đá quý phát sáng
+function drawItems() {
+    items.forEach(item => {
+        ctx.save();
+        ctx.shadowBlur = 15;
 
-function drawStars(){
+        if (item.type === "gold") {
+            ctx.fillStyle = "#ffd700";
+            ctx.shadowColor = "#ffd700";
+            // Vẽ cục vàng góc cạnh tự nhiên
+            ctx.beginPath();
+            ctx.arc(item.x, item.y, item.radius, 0, Math.PI*2);
+            ctx.fill();
+            // Thêm vệt sáng óng ánh
+            ctx.fillStyle = "rgba(255,255,255,0.4)";
+            ctx.beginPath();
+            ctx.arc(item.x - item.radius*0.3, item.y - item.radius*0.3, item.radius*0.2, 0, Math.PI*2);
+            ctx.fill();
 
-    stars.forEach(s=>{
+        } else if (item.type === "stone") {
+            ctx.fillStyle = "#64748b";
+            ctx.shadowColor = "#64748b";
+            // Vẽ đá hình đa giác xù xì
+            ctx.beginPath();
+            ctx.rect(item.x - item.radius, item.y - item.radius, item.radius*2, item.radius*2);
+            ctx.fill();
 
-        s.x -= s.speed;
+        } else if (item.type === "gift") {
+            ctx.fillStyle = "#ff4d67";
+            ctx.shadowColor = "#ff4d67";
+            // Vẽ túi quà đỏ thắt nơ vàng
+            ctx.beginPath();
+            ctx.roundRect(item.x - item.radius, item.y - item.radius, item.radius*2, item.radius*2, 6);
+            ctx.fill();
+            // Chữ hỏi chấm bí mật
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 14px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("?", item.x, item.y);
 
-        if(s.x < 0){
-
-            s.x = canvas.width;
-            s.y = Math.random()*canvas.height;
-
+        } else if (item.type === "diamond") {
+            ctx.fillStyle = "#00ffff";
+            ctx.shadowColor = "#00ffff";
+            // Vẽ hình thoi kim cương tinh xảo
+            ctx.beginPath();
+            ctx.moveTo(item.x, item.y - item.radius);
+            ctx.lineTo(item.x + item.radius, item.y);
+            ctx.lineTo(item.x, item.y + item.radius);
+            ctx.lineTo(item.x - item.radius, item.y);
+            ctx.closePath();
+            ctx.fill();
         }
 
-        ctx.fillStyle="rgba(255,255,255,.8)";
-
-        ctx.fillRect(s.x,s.y,s.size,s.size);
-
+        ctx.restore();
     });
-
 }
 
-/* WARNING */
-
-function drawBossWarning(){
-
-    if(!boss) return;
-
-    ctx.font="bold 48px Arial";
-
-    ctx.fillStyle="rgba(255,0,0,.2)";
-
-    ctx.fillText(
-        "⚠ WARNING BOSS ⚠",
-        canvas.width/2 - 220,
-        80
-    );
-
-}
-
-/* GAME LOOP */
-
-function animate(){
-
-    requestAnimationFrame(animate);
-
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-
-    ctx.fillStyle="#020617";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-
-    drawStars();
-
-    drawGrid();
-
-    /* movement */
-
-    player.x += player.vx * player.dir;
-
-    if(player.x > canvas.width - 150){
-
-        player.dir = -1;
-
-    }
-
-    if(player.x < 120){
-
-        player.dir = 1;
-
-    }
-
-    /* aim */
-
-    player.cooldown--;
-
-    let target = null;
-
-    if(boss){
-
-        target = boss;
-
-    }else if(enemies.length > 0){
-
-        target = enemies[0];
-
-    }
-
-    if(target && player.cooldown <= 0){
-
-        shoot(target);
-
-        player.cooldown = 10;
-
-    }
-
-    drawStickman(player.x,player.y);
-
-    /* bullets */
-
-    bullets.forEach((b,bi)=>{
-
-        b.x += b.vx;
-        b.y += b.vy;
-
-        ctx.save();
-
-        ctx.shadowBlur=20;
-        ctx.shadowColor="#00ff88";
-
-        ctx.fillStyle="#00ff88";
-
-        ctx.beginPath();
-        ctx.arc(b.x,b.y,b.radius,0,Math.PI*2);
-        ctx.fill();
-
-        ctx.restore();
-
-    });
-
-    /* enemies */
-
-    enemies.forEach((e,ei)=>{
-
-        let dx = player.x - e.x;
-        let dy = player.y - e.y;
-
-        let angle = Math.atan2(dy,dx);
-
-        e.x += Math.cos(angle) * e.speed;
-        e.y += Math.sin(angle) * e.speed;
-
-        ctx.save();
-
-        ctx.shadowBlur=25;
-        ctx.shadowColor="#ff3b5c";
-
-        ctx.fillStyle="#ff3b5c";
-
-        ctx.beginPath();
-        ctx.arc(e.x,e.y,e.radius,0,Math.PI*2);
-        ctx.fill();
-
-        ctx.restore();
-
-        bullets.forEach((b,bi)=>{
-
-            let dx = b.x - e.x;
-            let dy = b.y - e.y;
-
-            let dist = Math.sqrt(dx*dx + dy*dy);
-
-            if(dist < e.radius){
-
-                createExplosion(e.x,e.y);
-
-                enemies.splice(ei,1);
-                bullets.splice(bi,1);
-
-            }
-
-        });
-
-    });
-
-    /* boss */
-
-    if(boss){
-
-        drawBossWarning();
-
-        let dx = player.x - boss.x;
-        let dy = player.y - boss.y;
-
-        let angle = Math.atan2(dy,dx);
-
-        boss.x += Math.cos(angle) * boss.speed;
-        boss.y += Math.sin(angle) * boss.speed;
-
-        ctx.save();
-
-        ctx.shadowBlur=40;
-        ctx.shadowColor="#ff0000";
-
-        ctx.fillStyle="#ff0000";
-
-        ctx.beginPath();
-        ctx.arc(boss.x,boss.y,boss.radius,0,Math.PI*2);
-        ctx.fill();
-
-        ctx.restore();
-
-        /* HP */
-
-        ctx.fillStyle="#222";
-
-        ctx.fillRect(
-            canvas.width/2 - 150,
-            20,
-            300,
-            20
-        );
-
-        ctx.fillStyle="#ff0000";
-
-        ctx.fillRect(
-            canvas.width/2 - 150,
-            20,
-            boss.hp * 3,
-            20
-        );
-
-        bullets.forEach((b,bi)=>{
-
-            let dx = b.x - boss.x;
-            let dy = b.y - boss.y;
-
-            let dist = Math.sqrt(dx*dx + dy*dy);
-
-            if(dist < boss.radius){
-
-                boss.hp -= 2;
-
-                createExplosion(
-                    b.x,
-                    b.y,
-                    "#ff0000"
-                );
-
-                bullets.splice(bi,1);
-
-            }
-
-        });
-
-        if(boss.hp <= 0){
-
-            createExplosion(
-                boss.x,
-                boss.y,
-                "#ff0000"
-            );
-
-            createExplosion(
-                boss.x,
-                boss.y,
-                "#ffff00"
-            );
-
-            boss = null;
-
-        }
-
-    }
-
-    /* particles */
-
-    particles.forEach((p,pi)=>{
-
-        p.x += p.vx;
-        p.y += p.vy;
-
+// 5. Hiệu ứng chữ số tiền bay lên khi thu hoạch thành công (+$$$)
+function drawPopups() {
+    scorePopups.forEach((p, index) => {
+        p.y -= 0.8;
         p.life--;
+        ctx.save();
+        ctx.font = "bold 16px 'Segoe UI'";
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life / 40;
+        ctx.fillText("+$" + p.text, p.x, p.y);
+        ctx.restore();
 
-        ctx.fillStyle=p.color;
+        if(p.life <= 0) scorePopups.splice(index, 1);
+    });
+}
 
-        ctx.globalAlpha = p.life / 45;
 
-        ctx.fillRect(
-            p.x,
-            p.y,
-            p.size,
-            p.size
-        );
+// --- VÒNG LẶP CHÍNH CỦA GAME (GAME LOOP) ---
+function animate() {
+    requestAnimationFrame(animate);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        ctx.globalAlpha = 1;
+    // Vẽ phông nền lưới mờ ảo kiểu cyber
+    ctx.strokeStyle = "rgba(255,255,255,0.015)";
+    ctx.lineWidth = 1;
+    for(let x=0; x<canvas.width; x+=30) {
+        ctx.beginPath(); ctx.moveTo(x, 65); ctx.lineTo(x, canvas.height); ctx.stroke();
+    }
 
-        if(p.life <= 0){
+    // Thực thi AI quét tìm vàng đưa ra quyết định phóng dây
+    runGoldMinerAI();
 
-            particles.splice(pi,1);
+    // XỬ LÝ TRẠNG THÁI NGÀM KẸP
+    if (hook.state === "swing") {
+        // Trạng thái lắc qua lắc lại đều đặn tự nhiên
+        hook.angle += 0.022 * hook.angleDir;
+        if (hook.angle > 1.25) hook.angleDir = -1; // Giới hạn góc ~ 70 độ trái phải
+        if (hook.angle < -1.25) hook.angleDir = 1;
+        hook.length = 25; // Chiều dài gốc ban đầu
 
+    } else if (hook.state === "extend") {
+        // Phóng ngàm dài ra với tốc độ nhanh
+        hook.length += hook.extendSpeed;
+        
+        // Nếu chạm rìa hoặc đáy màn hình thì phải thụt dây về
+        if (hook.x < 10 || hook.x > canvas.width - 10 || hook.y > canvas.height - 15) {
+            hook.state = "retract";
         }
 
-    });
+        // Kiểm tra va chạm với vật phẩm nào dưới đất không
+        for (let i = 0; i < items.length; i++) {
+            let item = items[i];
+            let dx = hook.x - item.x;
+            let dy = hook.y - item.y;
+            let dist = Math.sqrt(dx*dx + dy*dy);
 
+            if (dist < item.radius + 5) {
+                // Đã gắp dính mục tiêu!
+                hook.attachedItem = item;
+                items.splice(i, 1); // Tạm thời nhấc vật phẩm ra khỏi lòng đất
+                hook.state = "retract";
+                break;
+            }
+        }
+
+    } else if (hook.state === "retract") {
+        miner.armAnim += 0.25; // Chuyển động cơ cánh tay quay tời kéo đồ
+        
+        // Tính toán tốc độ kéo về dựa vào trọng lượng vật phẩm (Nặng thì kéo rất rùa bò)
+        let currentRetractSpeed = hook.baseSpeed;
+        if (hook.attachedItem) {
+            currentRetractSpeed = Math.max(0.6, hook.baseSpeed - hook.attachedItem.weight);
+        }
+        
+        hook.length -= currentRetractSpeed;
+
+        // Nếu có ngậm vật phẩm, cho vật phẩm di chuyển tịnh tiến theo đầu móc
+        if (hook.attachedItem) {
+            hook.attachedItem.x = hook.x;
+            hook.attachedItem.y = hook.y + hook.attachedItem.radius * 0.4;
+        }
+
+        // Khi dây thu về hết vị trí gốc ban đầu -> THU HOẠCH TÍNH TIỀN
+        if (hook.length <= 25) {
+            hook.length = 25;
+            hook.state = "swing";
+
+            if (hook.attachedItem) {
+                score += hook.attachedItem.value; // Cộng tiền
+                
+                // Đẩy hiệu ứng số tiền nhảy bung lên màn hình
+                scorePopups.push({
+                    x: canvas.width / 2 - 10,
+                    y: miner.y - 10,
+                    text: hook.attachedItem.value,
+                    color: hook.attachedItem.type === "stone" ? "#94a3b8" : "#00ff88",
+                    life: 40
+                });
+
+                hook.attachedItem = null;
+
+                // KIỂM TRA ĐIỀU KIỆN QUA MÀN
+                // Nếu dọn sạch sẽ vàng quý trên bản đồ, tự chuyển màn mới và làm mới map
+                let highValueItems = items.filter(it => it.type !== "stone");
+                if (highValueItems.length === 0 || score >= targetScore) {
+                    level++;
+                    generateItems();
+                }
+            }
+        }
+    }
+
+    // Vẽ toàn bộ các thành phần lên màn hình theo thứ tự lớp
+    drawItems();
+    if (hook.attachedItem) {
+        // Nếu đang kéo vật phẩm về, tiến hành vẽ vật phẩm đó ở vị trí đầu ngàm móc
+        ctx.save();
+        ctx.shadowBlur = 10;
+        if (hook.attachedItem.type === "gold") ctx.fillStyle = "#ffd700";
+        else if (hook.attachedItem.type === "stone") ctx.fillStyle = "#64748b";
+        else if (hook.attachedItem.type === "gift") ctx.fillStyle = "#ff4d67";
+        else if (hook.attachedItem.type === "diamond") ctx.fillStyle = "#00ffff";
+        
+        ctx.beginPath();
+        if (hook.attachedItem.type === "stone") {
+            ctx.rect(hook.attachedItem.x - hook.attachedItem.radius, hook.attachedItem.y - hook.attachedItem.radius, hook.attachedItem.radius*2, hook.attachedItem.radius*2);
+        } else if (hook.attachedItem.type === "diamond") {
+            ctx.moveTo(hook.attachedItem.x, hook.attachedItem.y - hook.attachedItem.radius);
+            ctx.lineTo(hook.attachedItem.x + hook.attachedItem.radius, hook.attachedItem.y);
+            ctx.lineTo(hook.attachedItem.x, hook.attachedItem.y + hook.attachedItem.radius);
+            ctx.lineTo(hook.attachedItem.x - hook.attachedItem.radius, hook.attachedItem.y);
+            ctx.closePath();
+        } else {
+            ctx.arc(hook.attachedItem.x, hook.attachedItem.y, hook.attachedItem.radius, 0, Math.PI*2);
+        }
+        ctx.fill();
+        if (hook.attachedItem.type === "gift") {
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 14px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            ctx.fillText("?", hook.attachedItem.x, hook.attachedItem.y);
+        }
+        ctx.restore();
+    }
+    
+    drawHook();
+    drawMiner();
+    drawTopBar();
+    drawPopups();
 }
 
 animate();

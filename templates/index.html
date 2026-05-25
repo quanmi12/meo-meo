@@ -163,6 +163,7 @@ form button:hover{
     border:1px solid rgba(0,255,255,.2);
     overflow:hidden;
     position:relative;
+    cursor: pointer; /* Đổi icon chuột thành hình bàn tay để báo hiệu tương tác được */
 
     box-shadow:
     0 0 25px rgba(0,255,255,.05),
@@ -338,7 +339,7 @@ ${{ "%.2f"|format(total2 or 0) }}
 
 </div>
 
-<div class="battlefield">
+<div class="battlefield" id="gameZone">
     <canvas id="battleCanvas"></canvas>
 </div>
 
@@ -376,6 +377,7 @@ window.onload = () => {
 
 const canvas = document.getElementById("battleCanvas");
 const ctx = canvas.getContext("2d");
+const gameZone = document.getElementById("gameZone");
 
 function resizeCanvas(){
     canvas.width = canvas.offsetWidth;
@@ -384,15 +386,16 @@ function resizeCanvas(){
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
 
-// --- KHỞI TẠO BIẾN GAME ĐÀO VÀNG ---
+// --- BIẾN GAME ĐÀO VÀNG ---
 let score = 0;
 let targetScore = 650;
 let level = 1;
 
 const miner = {
-    x: 0, // Sẽ cập nhật động theo tâm canvas
+    x: 0,
     y: 65,
-    armAnim: 0
+    armAnim: 0,
+    bounceY: 0 // Hiệu ứng nảy cabin khi kéo đồ nặng
 };
 
 const hook = {
@@ -402,27 +405,28 @@ const hook = {
     speed: 2.5,
     angleDir: 1,
     length: 25,
-    state: "swing", // swing, extend, retract
+    state: "swing", 
     attachedItem: null,
     baseSpeed: 5,
-    extendSpeed: 7
+    extendSpeed: 8,
+    jawOpen: 0.6, // Góc mở của ngàm (0 = đóng hoàn toàn, 1 = mở căng)
+    ropeVibrate: 0 // Độ rung của dây cáp
 };
 
 let items = [];
 let scorePopups = [];
+let particles = []; // Mảng quản lý hiệu ứng bụi đất/bụi vàng tỏa ra
+let globalGlowTimer = 0; // Dùng để làm hiệu ứng kim cương lấp lánh (Pulsing)
 
-// Hàm tạo vật phẩm ngẫu nhiên dưới lòng đất
+// Hàm tạo vật phẩm
 function generateItems() {
     items = [];
-    
-    // Tăng mục tiêu theo level
     targetScore = 500 + level * 150;
 
-    // Tạo Vàng (Gold)
     let goldCount = 5 + Math.floor(Math.random() * 4);
     for(let i=0; i<goldCount; i++) {
         let sizeRand = Math.random();
-        let radius = sizeRand < 0.4 ? 12 : (sizeRand < 0.8 ? 22 : 35); // Vàng nhỏ, vừa, lớn
+        let radius = sizeRand < 0.4 ? 12 : (sizeRand < 0.8 ? 22 : 35);
         items.push({
             x: Math.random() * (canvas.width - 80) + 40,
             y: Math.random() * (canvas.height - 160) + 120,
@@ -433,7 +437,6 @@ function generateItems() {
         });
     }
 
-    // Tạo Đá (Stone)
     let stoneCount = 3 + Math.floor(Math.random() * 3);
     for(let i=0; i<stoneCount; i++) {
         let radius = 18 + Math.random() * 16;
@@ -442,12 +445,11 @@ function generateItems() {
             y: Math.random() * (canvas.height - 160) + 120,
             type: "stone",
             radius: radius,
-            weight: radius * 0.35, // Đá cực kỳ nặng, kéo rất chậm
+            weight: radius * 0.35, 
             value: Math.floor(radius * 0.4)
         });
     }
 
-    // Tạo Túi Quà Bí Ẩn (?)
     let giftCount = 1 + Math.floor(Math.random() * 2);
     for(let i=0; i<giftCount; i++) {
         items.push({
@@ -455,12 +457,11 @@ function generateItems() {
             y: Math.random() * (canvas.height - 160) + 120,
             type: "gift",
             radius: 14,
-            weight: 1.5, // Khá nhẹ
-            value: Math.random() > 0.5 ? 100 : 250 // Quà ngẫu nhiên tiền ít hoặc nhiều
+            weight: 1.5,
+            value: Math.random() > 0.5 ? 100 : 250
         });
     }
 
-    // Tạo Kim Cương (Diamond)
     let diamondCount = 1 + Math.floor(Math.random() * 2);
     for(let i=0; i<diamondCount; i++) {
         items.push({
@@ -468,65 +469,80 @@ function generateItems() {
             y: Math.random() * (canvas.height - 160) + 120,
             type: "diamond",
             radius: 9,
-            weight: 0.8, // Kéo siêu nhanh
+            weight: 0.8,
             value: 350
         });
-    }
-
-    // Tránh việc các vật phẩm bị dính chồng lên nhau quá mức ở lúc khởi tạo
-    for (let i = 0; i < items.length; i++) {
-        for (let j = i + 1; j < items.length; j++) {
-            let dx = items[i].x - items[j].x;
-            let dy = items[i].y - items[j].y;
-            let dist = Math.sqrt(dx*dx + dy*dy);
-            if(dist < items[i].radius + items[j].radius) {
-                items[j].x = Math.random() * (canvas.width - 80) + 40;
-                items[j].y = Math.random() * (canvas.height - 160) + 120;
-            }
-        }
     }
 }
 
 generateItems();
 
-// --- LOGIC AI TỰ ĐỘNG NHẮM BẮN (AUTO AI) ---
-function runGoldMinerAI() {
-    if (hook.state !== "swing") return;
+// --- TẠO HIỆU ỨNG HẠT BỤI PHÁT SÁNG (PARTICLES) ---
+function createParticles(x, y, color, count = 8) {
+    for (let i = 0; i < count; i++) {
+        let angle = Math.random() * Math.PI * 2;
+        let speed = 1 + Math.random() * 3;
+        particles.push({
+            x: x,
+            y: y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            radius: 2 + Math.random() * 3,
+            color: color,
+            alpha: 1,
+            decay: 0.02 + Math.random() * 0.02
+        });
+    }
+}
 
-    // Tính toán vị trí gốc ngàm
-    let startX = canvas.width / 2;
-    let startY = miner.y;
-
-    // AI quét xem góc hiện tại của dây có đi qua vật phẩm nào không
-    for (let item of items) {
-        let dx = item.x - startX;
-        let dy = item.y - startY;
-        
-        // Góc từ ngàm đến vật phẩm
-        let targetAngle = Math.atan2(dx, dy); 
-
-        // Khoảng cách sai số góc cho phép bắn (Vật phẩm to dễ trúng, nhỏ khó trúng)
-        let dist = Math.sqrt(dx*dx + dy*dy);
-        let allowedError = Math.atan2(item.radius, dist) * 0.85; 
-
-        // Tránh bắn cục đá nếu có lựa chọn khác tốt hơn (AI thông minh né đá)
-        if (item.type === "stone" && item.radius > 25 && Math.random() < 0.7) {
-            continue; 
-        }
-
-        // Nếu góc lắc trùng khớp góc vật phẩm -> PHÓNG NGÀM!
-        if (Math.abs(hook.angle - targetAngle) < allowedError) {
-            hook.state = "extend";
-            break;
+// Cập nhật trạng thái bay của các hạt bụi
+function updateParticles() {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= p.decay;
+        if (p.alpha <= 0) {
+            particles.splice(i, 1);
         }
     }
 }
 
-// --- VẼ ĐỒ HỌA VECTOR CANVAS ---
+function drawParticles() {
+    particles.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    });
+}
 
-// 1. Vẽ giao diện thông số trên cùng (Top Bar)
+// Điều khiển từ người chơi
+function dropHook() {
+    if (hook.state === "swing") {
+        hook.state = "extend";
+    }
+}
+
+window.addEventListener("keydown", (e) => {
+    if (e.code === "Space") {
+        e.preventDefault();
+        dropHook();
+    }
+});
+
+gameZone.addEventListener("click", () => {
+    dropHook();
+});
+
+// --- VẼ ĐỒ HỌA CANVAS ---
+
 function drawTopBar() {
-    // Đường ngăn cách mặt đất
     ctx.strokeStyle = "rgba(0, 255, 255, 0.25)";
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -535,26 +551,25 @@ function drawTopBar() {
     ctx.stroke();
 
     ctx.font = "bold 15px 'Segoe UI', sans-serif";
-    
-    // Tiền hiện tại
     ctx.fillStyle = "#00ff88";
     ctx.fillText("Tien: $" + score, 20, 30);
     
-    // Mục tiêu vượt ải
     ctx.fillStyle = "#e2e8f0";
     ctx.fillText("Muc tieu: $" + targetScore, 20, 52);
 
-    // Cấp độ hiện tại (Level)
     ctx.fillStyle = "#00bfff";
     ctx.textAlign = "right";
-    ctx.fillText("Cap: " + level, canvas.width - 20, 40);
+    ctx.fillText("Cap: " + level, canvas.width - 20, 35);
+    
+    ctx.font = "12px 'Segoe UI', sans-serif";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+    ctx.fillText("[ Bấm SPACE hoặc CLICK để thả ngàm ]", canvas.width - 20, 53);
     ctx.textAlign = "left";
 }
 
-// 2. Vẽ Ông già người que (Stickman Miner)
 function drawMiner() {
     let mx = canvas.width / 2;
-    let my = miner.y;
+    let my = miner.y + miner.bounceY; // Áp dụng độ nảy rung lắc khi kéo nặng
 
     ctx.save();
     ctx.strokeStyle = "#00ff88";
@@ -563,17 +578,14 @@ function drawMiner() {
     ctx.lineWidth = 3;
     ctx.lineCap = "round";
 
-    // Cabin máy kéo nhỏ xinh màu Neon
     ctx.strokeStyle = "rgba(0, 255, 255, 0.4)";
     ctx.strokeRect(mx - 20, my - 45, 40, 45);
 
-    // Thân người que ngồi lái
     ctx.strokeStyle = "#e2e8f0";
     ctx.beginPath();
-    ctx.arc(mx, my - 30, 6, 0, Math.PI * 2); // Đầu
-    ctx.moveTo(mx, my - 24); ctx.lineTo(mx, my - 8); // Lưng
+    ctx.arc(mx, my - 30, 6, 0, Math.PI * 2);
+    ctx.moveTo(mx, my - 24); ctx.lineTo(mx, my - 8);
     
-    // Tay quay tời (chuyển động khi kéo đồ)
     let armOffset = (hook.state === "retract") ? Math.sin(miner.armAnim) * 10 : 0;
     ctx.moveTo(mx, my - 18);
     ctx.lineTo(mx - 12, my - 15 + armOffset);
@@ -582,19 +594,21 @@ function drawMiner() {
     ctx.restore();
 }
 
-// 3. Vẽ dây cáp và ngàm kẹp (Hook)
 function drawHook() {
     let startX = canvas.width / 2;
-    let startY = miner.y;
+    let startY = miner.y + miner.bounceY;
 
-    // Tính tọa độ đầu ngàm kẹp dựa vào chiều dài dây và góc quay
     let endX = startX + Math.sin(hook.angle) * hook.length;
     let endY = startY + Math.cos(hook.angle) * hook.length;
 
-    // Vẽ Dây cáp Neon rực rỡ
+    // Nếu đang kéo vật nặng, làm sợi dây hơi rung rinh (Hiệu ứng chịu lực)
+    if (hook.state === "retract" && hook.attachedItem && hook.attachedItem.weight > 2) {
+        endX += Math.sin(hook.ropeVibrate) * 1.5;
+    }
+
     ctx.save();
     ctx.strokeStyle = "#ffffff";
-    ctx.shadowBlur = 8;
+    ctx.shadowBlur = 6;
     ctx.shadowColor = "#ffffff";
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -602,7 +616,6 @@ function drawHook() {
     ctx.lineTo(endX, endY);
     ctx.stroke();
 
-    // Vẽ Ngàm kẹp (Cái móc) dạng lưỡi hái đôi Cyberpunk
     ctx.translate(endX, endY);
     ctx.rotate(-hook.angle);
     ctx.strokeStyle = "#00ffff";
@@ -610,37 +623,40 @@ function drawHook() {
     ctx.shadowBlur = 12;
     ctx.lineWidth = 3;
 
+    // ĐỘNG TÁC NGÀM KẸP: Tính toán góc mở khép dựa trên biến jawOpen
+    let jawAngleOffset = hook.jawOpen * 0.35; 
+
     ctx.beginPath();
-    // Móc trái
+    // Lưỡi móc trái linh hoạt
     ctx.moveTo(0, 0);
-    ctx.arc(-6, 6, 8, -Math.PI/2, Math.PI/4, false);
-    // Móc phải
+    ctx.arc(-6, 6, 9, -Math.PI/2 - jawAngleOffset, Math.PI/4 - jawAngleOffset, false);
+    // Lưỡi móc phải linh hoạt
     ctx.moveTo(0, 0);
-    ctx.arc(6, 6, 8, -Math.PI/2, Math.PI*3/4, true);
+    ctx.arc(6, 6, 9, -Math.PI/2 + jawAngleOffset, Math.PI*3/4 + jawAngleOffset, true);
     
     ctx.stroke();
     ctx.restore();
 
-    // Đồng bộ tọa độ thực tế của đầu ngàm để tính va chạm vật lý
     hook.x = endX;
     hook.y = endY;
 }
 
-// 4. Vẽ các vật thể vàng bạc đá quý phát sáng
 function drawItems() {
+    globalGlowTimer += 0.08;
+    // Độ nhấp nháy phát quang rực rỡ của đá quý thay đổi liên tục theo thời gian
+    let pulseGlow = 10 + Math.sin(globalGlowTimer) * 6;
+
     items.forEach(item => {
         ctx.save();
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = pulseGlow;
 
         if (item.type === "gold") {
             ctx.fillStyle = "#ffd700";
             ctx.shadowColor = "#ffd700";
-            // Vẽ cục vàng góc cạnh tự nhiên
             ctx.beginPath();
             ctx.arc(item.x, item.y, item.radius, 0, Math.PI*2);
             ctx.fill();
-            // Thêm vệt sáng óng ánh
-            ctx.fillStyle = "rgba(255,255,255,0.4)";
+            ctx.fillStyle = "rgba(255,255,255,0.5)";
             ctx.beginPath();
             ctx.arc(item.x - item.radius*0.3, item.y - item.radius*0.3, item.radius*0.2, 0, Math.PI*2);
             ctx.fill();
@@ -648,7 +664,7 @@ function drawItems() {
         } else if (item.type === "stone") {
             ctx.fillStyle = "#64748b";
             ctx.shadowColor = "#64748b";
-            // Vẽ đá hình đa giác xù xì
+            ctx.shadowBlur = 5;
             ctx.beginPath();
             ctx.rect(item.x - item.radius, item.y - item.radius, item.radius*2, item.radius*2);
             ctx.fill();
@@ -656,21 +672,17 @@ function drawItems() {
         } else if (item.type === "gift") {
             ctx.fillStyle = "#ff4d67";
             ctx.shadowColor = "#ff4d67";
-            // Vẽ túi quà đỏ thắt nơ vàng
             ctx.beginPath();
             ctx.roundRect(item.x - item.radius, item.y - item.radius, item.radius*2, item.radius*2, 6);
             ctx.fill();
-            // Chữ hỏi chấm bí mật
             ctx.fillStyle = "#ffffff";
-            ctx.font = "bold 14px Arial";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
+            ctx.font = "bold 14px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
             ctx.fillText("?", item.x, item.y);
 
         } else if (item.type === "diamond") {
             ctx.fillStyle = "#00ffff";
             ctx.shadowColor = "#00ffff";
-            // Vẽ hình thoi kim cương tinh xảo
+            ctx.shadowBlur = pulseGlow + 8; // Kim cương siêu lấp lánh thu hút ánh nhìn
             ctx.beginPath();
             ctx.moveTo(item.x, item.y - item.radius);
             ctx.lineTo(item.x + item.radius, item.y);
@@ -684,15 +696,16 @@ function drawItems() {
     });
 }
 
-// 5. Hiệu ứng chữ số tiền bay lên khi thu hoạch thành công (+$$$)
 function drawPopups() {
     scorePopups.forEach((p, index) => {
-        p.y -= 0.8;
+        p.y -= 1;
         p.life--;
         ctx.save();
-        ctx.font = "bold 16px 'Segoe UI'";
+        ctx.font = "bold 20px 'Segoe UI'"; // Chữ số tiền to và rõ nét hơn
         ctx.fillStyle = p.color;
         ctx.globalAlpha = p.life / 40;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = p.color;
         ctx.fillText("+$" + p.text, p.x, p.y);
         ctx.restore();
 
@@ -700,40 +713,43 @@ function drawPopups() {
     });
 }
 
-
-// --- VÒNG LẶP CHÍNH CỦA GAME (GAME LOOP) ---
+// --- VÒNG LẶP CHÍNH ---
 function animate() {
     requestAnimationFrame(animate);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Vẽ phông nền lưới mờ ảo kiểu cyber
+    // Grid nền cyber mờ
     ctx.strokeStyle = "rgba(255,255,255,0.015)";
     ctx.lineWidth = 1;
     for(let x=0; x<canvas.width; x+=30) {
         ctx.beginPath(); ctx.moveTo(x, 65); ctx.lineTo(x, canvas.height); ctx.stroke();
     }
 
-    // Thực thi AI quét tìm vàng đưa ra quyết định phóng dây
-    runGoldMinerAI();
+    updateParticles();
 
-    // XỬ LÝ TRẠNG THÁI NGÀM KẸP
     if (hook.state === "swing") {
-        // Trạng thái lắc qua lắc lại đều đặn tự nhiên
-        hook.angle += 0.022 * hook.angleDir;
-        if (hook.angle > 1.25) hook.angleDir = -1; // Giới hạn góc ~ 70 độ trái phải
-        if (hook.angle < -1.25) hook.angleDir = 1;
-        hook.length = 25; // Chiều dài gốc ban đầu
+        let swingSpeed = 0.022 + (level * 0.002);
+        hook.angle += Math.min(0.04, swingSpeed) * hook.angleDir;
+        if (hook.angle > 1.3) hook.angleDir = -1;
+        if (hook.angle < -1.3) hook.angleDir = 1;
+        hook.length = 25;
+        
+        // Trạng thái chờ: Ngàm mở hờ thư giãn
+        hook.jawOpen += (0.6 - hook.jawOpen) * 0.1;
+        miner.bounceY += (0 - miner.bounceY) * 0.1;
 
     } else if (hook.state === "extend") {
-        // Phóng ngàm dài ra với tốc độ nhanh
         hook.length += hook.extendSpeed;
         
-        // Nếu chạm rìa hoặc đáy màn hình thì phải thụt dây về
+        // Trạng thái lao đi: Ngàm há hốc căng ra góc tối đa đón mồi
+        hook.jawOpen += (1.2 - hook.jawOpen) * 0.2;
+
         if (hook.x < 10 || hook.x > canvas.width - 10 || hook.y > canvas.height - 15) {
             hook.state = "retract";
+            // Tạo ít hạt bụi đất rớt ra do hụt đáy bẫy
+            createParticles(hook.x, hook.y, "#64748b", 4);
         }
 
-        // Kiểm tra va chạm với vật phẩm nào dưới đất không
         for (let i = 0; i < items.length; i++) {
             let item = items[i];
             let dx = hook.x - item.x;
@@ -741,43 +757,61 @@ function animate() {
             let dist = Math.sqrt(dx*dx + dy*dy);
 
             if (dist < item.radius + 5) {
-                // Đã gắp dính mục tiêu!
                 hook.attachedItem = item;
-                items.splice(i, 1); // Tạm thời nhấc vật phẩm ra khỏi lòng đất
+                items.splice(i, 1);
                 hook.state = "retract";
+                
+                // HOẠT ẢNH BÙNG NỔ: Chạm vật thể tỏa hạt bụi màu Neon tương ứng cực đã mắt
+                let particleColor = "#ffd700";
+                if(item.type === "stone") particleColor = "#64748b";
+                if(item.type === "diamond") particleColor = "#00ffff";
+                if(item.type === "gift") particleColor = "#ff4d67";
+                createParticles(item.x, item.y, particleColor, 12);
+                
                 break;
             }
         }
 
     } else if (hook.state === "retract") {
-        miner.armAnim += 0.25; // Chuyển động cơ cánh tay quay tời kéo đồ
+        miner.armAnim += 0.25;
+        hook.ropeVibrate += 0.5;
+
+        // Trạng thái ngậm chặt: Càng cắp khép chặt ôm khít lấy vật gắp
+        hook.jawOpen += (0.1 - hook.jawOpen) * 0.3;
         
-        // Tính toán tốc độ kéo về dựa vào trọng lượng vật phẩm (Nặng thì kéo rất rùa bò)
         let currentRetractSpeed = hook.baseSpeed;
         if (hook.attachedItem) {
-            currentRetractSpeed = Math.max(0.6, hook.baseSpeed - hook.attachedItem.weight);
+            currentRetractSpeed = Math.max(0.5, hook.baseSpeed - hook.attachedItem.weight);
+            // Kéo đồ nặng -> Cabin rung bần bật lên xuống liên hồi
+            if(hook.attachedItem.weight > 2) {
+                miner.bounceY = Math.sin(hook.ropeVibrate) * 2;
+                // Rơi hạt bụi li ti dọc đường kéo của Cục Đá nặng
+                if(Math.random() < 0.15) {
+                    createParticles(hook.x, hook.y, "#64748b", 1);
+                }
+            }
         }
         
         hook.length -= currentRetractSpeed;
 
-        // Nếu có ngậm vật phẩm, cho vật phẩm di chuyển tịnh tiến theo đầu móc
         if (hook.attachedItem) {
             hook.attachedItem.x = hook.x;
-            hook.attachedItem.y = hook.y + hook.attachedItem.radius * 0.4;
+            hook.attachedItem.y = hook.y + hook.attachedItem.radius * 0.3;
         }
 
-        // Khi dây thu về hết vị trí gốc ban đầu -> THU HOẠCH TÍNH TIỀN
         if (hook.length <= 25) {
             hook.length = 25;
             hook.state = "swing";
 
             if (hook.attachedItem) {
-                score += hook.attachedItem.value; // Cộng tiền
+                score += hook.attachedItem.value;
                 
-                // Đẩy hiệu ứng số tiền nhảy bung lên màn hình
+                // Khi nộp vàng -> Bắn pháo hoa hạt nhỏ tại Cabin máy kéo ăn mừng
+                createParticles(canvas.width / 2, miner.y, "#00ff88", 6);
+
                 scorePopups.push({
-                    x: canvas.width / 2 - 10,
-                    y: miner.y - 10,
+                    x: canvas.width / 2 - 15,
+                    y: miner.y - 15,
                     text: hook.attachedItem.value,
                     color: hook.attachedItem.type === "stone" ? "#94a3b8" : "#00ff88",
                     life: 40
@@ -785,8 +819,6 @@ function animate() {
 
                 hook.attachedItem = null;
 
-                // KIỂM TRA ĐIỀU KIỆN QUA MÀN
-                // Nếu dọn sạch sẽ vàng quý trên bản đồ, tự chuyển màn mới và làm mới map
                 let highValueItems = items.filter(it => it.type !== "stone");
                 if (highValueItems.length === 0 || score >= targetScore) {
                     level++;
@@ -796,16 +828,16 @@ function animate() {
         }
     }
 
-    // Vẽ toàn bộ các thành phần lên màn hình theo thứ tự lớp
+    // Render mọi linh hồn hoạt cảnh lên Canvas
     drawItems();
+    
     if (hook.attachedItem) {
-        // Nếu đang kéo vật phẩm về, tiến hành vẽ vật phẩm đó ở vị trí đầu ngàm móc
         ctx.save();
-        ctx.shadowBlur = 10;
-        if (hook.attachedItem.type === "gold") ctx.fillStyle = "#ffd700";
-        else if (hook.attachedItem.type === "stone") ctx.fillStyle = "#64748b";
-        else if (hook.attachedItem.type === "gift") ctx.fillStyle = "#ff4d67";
-        else if (hook.attachedItem.type === "diamond") ctx.fillStyle = "#00ffff";
+        ctx.shadowBlur = 12;
+        if (hook.attachedItem.type === "gold") { ctx.fillStyle = "#ffd700"; ctx.shadowColor = "#ffd700"; }
+        else if (hook.attachedItem.type === "stone") { ctx.fillStyle = "#64748b"; ctx.shadowColor = "#64748b"; }
+        else if (hook.attachedItem.type === "gift") { ctx.fillStyle = "#ff4d67"; ctx.shadowColor = "#ff4d67"; }
+        else if (hook.attachedItem.type === "diamond") { ctx.fillStyle = "#00ffff"; ctx.shadowColor = "#00ffff"; }
         
         ctx.beginPath();
         if (hook.attachedItem.type === "stone") {
@@ -830,6 +862,7 @@ function animate() {
     
     drawHook();
     drawMiner();
+    drawParticles();
     drawTopBar();
     drawPopups();
 }

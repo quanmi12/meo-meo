@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ĐI CHÙA ONLINE - VIP ASSETS</title>
+<title>ĐI CHÙA ONLINE - FIX CHUẨN LAYOUT</title>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -29,30 +29,31 @@ form button{
 }
 form button:hover{ transform:scale(1.03); background:#16a34a; }
 
-/* CHÍNH ĐIỆN TƯỢNG PHẬT */
+/* KHU VỰC CHÍNH ĐIỆN CÓ ẢNH NỀN CHÙA VÀNG */
 .temple-dashboard {
-    width: 100%; height: 420px;
+    width: 100%; height: 450px;
+    /* ĐÃ FIX: Load ảnh chùa vàng làm phông nền chính điện */
     background-image: url('https://images.squarespace-cdn.com/content/v1/660a92f03f7a835a6db4be89/88cc71cc-3b10-4ea2-b88f-1a92a549db52/image_45f0c1.jpg');
-    background-size: 100% 100%; background-position: center; background-repeat: no-repeat;
+    background-size: cover; background-position: center; background-repeat: no-repeat;
     border-radius: 20px; border: 2px solid #eab308;
     box-shadow: 0 0 35px rgba(234, 179, 8, 0.3); margin-bottom: 24px;
-    position: relative; overflow: hidden;
+    position: relative;
 }
 
-/* GIỮ NGUYÊN 100% LAYOUT GÓC GÓC THEO ẢNH BẠN GỬI */
-.data-overlay { position: absolute; inset: 0; z-index: 2; background: rgba(0, 0, 0, 0.15); }
-.cyber-box { position: absolute; display: flex; flex-direction: column; justify-content: space-between; background: rgba(7, 21, 45, 0.85); padding: 16px; border-radius: 12px; border: 1px solid rgba(234, 179, 8, 0.4); }
-.box-phetuat { top: 6%; left: 3%; width: 32%; height: 42%; }
-.box-enchatit { bottom: 6%; left: 3%; width: 32%; height: 42%; }
+/* BOX SỐ LIỆU DOANH THU REALTIME (GIỮ NGUYÊN HOÀN TOÀN CẤU TRÚC GÓC TRÁI CỦA ÔNG) */
+.data-overlay { position: absolute; inset: 0; z-index: 2; background: rgba(0, 0, 0, 0.2); border-radius: 18px; }
+.cyber-box { position: absolute; display: flex; flex-direction: column; justify-content: space-between; background: rgba(7, 21, 45, 0.85); padding: 16px; border-radius: 12px; border: 1px solid rgba(234, 179, 8, 0.4); width: 32%; height: 42%; }
+.box-phetuat { top: 6%; left: 3%; }
+.box-enchatit { bottom: 6%; left: 3%; }
 
 .cyber-money {
-    position: absolute; font-size: clamp(24px, 3.5vw, 46px); font-weight: 900;
-    color: #00ff88; text-shadow: 0 0 10px rgba(0,255,136,0.5); text-align: right; width: 25%;
+    position: absolute; font-size: clamp(28px, 3.8vw, 48px); font-weight: 900;
+    color: #00ff88; text-shadow: 0 0 10px rgba(0,255,136,0.5); text-align: right; width: 30%;
 }
-.money-phetuat { top: 15%; right: 4%; }
-.money-enchatit { bottom: 25%; right: 4%; }
+.money-phetuat { top: 12%; right: 4%; }
+.money-enchatit { bottom: 22%; right: 4%; }
 
-.cyber-game-title { font-size: 13px; color: #cbd5e1; font-weight: 600; margin-top: 5px; }
+.cyber-game-title { font-size: 14px; color: #cbd5e1; font-weight: 600; margin-top: 5px; }
 .cyber-game-price { color: #f43f5e; font-size: 18px; font-weight: 800; }
 .cyber-btn {
     border: none; background: #eab308; color: #1e1b4b; padding: 6px 12px;
@@ -66,30 +67,49 @@ form button:hover{ transform:scale(1.03); background:#16a34a; }
 }
 .item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 15px; }
 
-/* KHU VỰC TƯƠNG TÁC TÂM LINH SỬ DỤNG ASSET THẬT */
+/* KHU VỰC ĐÀN LỄ TƯƠNG TÁC PHÍA DƯỚI (CHUYỂN SANG DOM THUẦN ĐỂ HOẠT ĐỘNG 100%) */
 .altar-zone {
-    height: 380px;
-    background: linear-gradient(to bottom, #090d16 0%, #020408 100%);
-    border-radius: 24px; border: 2px solid #eab308;
-    overflow: hidden; position: relative;
-    box-shadow: 0 0 25px rgba(234, 179, 8, 0.15);
+    height: 380px; background: linear-gradient(to bottom, #0f172a 0%, #020617 100%);
+    border-radius: 24px; border: 2px solid #eab308; position: relative;
+    box-shadow: 0 0 25px rgba(234, 179, 8, 0.15); display: flex; justify-content: center; align-items: flex-end; padding-bottom: 90px;
 }
-#altarCanvas { width: 100%; height: 100%; display: block; }
+.altar-title { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); font-size: 16px; font-weight: 700; color: #eab308; text-shadow: 0 0 8px rgba(234,179,8,0.4); }
 
-.control-panel {
-    position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
-    display: flex; gap: 15px; z-index: 10;
+/* ĐỊNH VỊ VÀ ĐỂ 2 ẢNH ASSET THẬT KHÔNG BỊ LỖI */
+.assets-container { display: flex; justify-content: space-around; width: 80%; max-width: 600px; align-items: flex-end; position: relative; }
+.asset-item { position: relative; display: flex; flex-direction: column; align-items: center; }
+
+/* Ảnh lư hương */
+.img-luhuong { width: 140px; height: auto; filter: drop-shadow(0 0 15px rgba(234,179,8,0.2)); transition: 0.2s; }
+/* Ảnh mõ gỗ */
+.img-mo { width: 130px; height: auto; filter: drop-shadow(0 0 15px rgba(251,191,36,0.2)); cursor: pointer; transition: transform 0.08s ease; }
+.img-mo:active { transform: scale(1.15); } /* Hiệu ứng co nảy khi bấm trực tiếp vào mõ */
+
+/* Hiệu ứng khói nhang bay */
+.smoke-container { position: absolute; bottom: 85px; left: 50%; transform: translateX(-50%); width: 40px; height: 100px; pointer-events: none; }
+.smoke-particle { position: absolute; bottom: 0; left: 50%; width: 6px; height: 6px; background: rgba(241, 245, 249, 0.4); border-radius: 50%; filter: blur(3px); animation: smokeUp 2s infinite linear; opacity: 0; }
+@keyframes smokeUp {
+    0% { transform: translate(-50%, 0) scale(1); opacity: 0; }
+    10% { opacity: 0.5; }
+    50% { transform: translate(calc(-50% + 15px), -50px) scale(2.5); filter: blur(5px); opacity: 0.3; }
+    100% { transform: translate(calc(-50% - 10px), -100px) scale(4); filter: blur(8px); opacity: 0; }
 }
-.panel-btn {
-    background: #eab308; color: #1e1b4b; border: none; padding: 10px 24px;
-    font-weight: 700; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    transition: 0.2s; font-size: 14px;
+
+/* Hiệu ứng chữ bay lên khi gõ mõ */
+.popup-text { position: absolute; font-weight: 800; font-size: 18px; color: #facc15; text-shadow: 0 0 8px #eab308; pointer-events: none; animation: textFlyUp 1s forwards ease-out; }
+@keyframes textFlyUp {
+    0% { transform: translate(-50%, 0); opacity: 1; }
+    100% { transform: translate(-50%, -80px); opacity: 0; }
 }
+
+/* THANH ĐIỀU KHIỂN NÚT BẤM */
+.control-panel { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 20px; }
+.panel-btn { background: #eab308; color: #1e1b4b; border: none; padding: 12px 26px; font-weight: 700; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.4); transition: 0.2s; font-size: 14px; }
 .panel-btn:hover { background: #ca8a04; transform: translateY(-2px); }
 
 @media(max-width: 800px) {
-    .temple-dashboard { height: 280px; }
-    .cyber-box { width: 42%; }
+    .temple-dashboard { height: 300px; }
+    .cyber-box { width: 45%; }
 }
 </style>
 </head>
@@ -148,8 +168,20 @@ form button:hover{ transform:scale(1.03); background:#16a34a; }
         {% endfor %}
     </div>
 
-    <div class="altar-zone" id="altarZone">
-        <canvas id="altarCanvas"></canvas>
+    <div class="altar-zone">
+        <div class="altar-title" id="txtCongDuc">✨ TỔNG CÔNG ĐỨC TÍCH LŨY: 0 🙏</div>
+        
+        <div class="assets-container">
+            <div class="asset-item" id="luhuongArea">
+                <div class="smoke-container" id="smokeBox"></div>
+                <img class="img-luhuong" src="https://images.squarespace-cdn.com/content/v1/660a92f03f7a835a6db4be89/76495be3-305f-4a00-ab64-caaf2b0a1a5b/image_4603bd.png" alt="Lư Hương">
+            </div>
+
+            <div class="asset-item" id="moArea">
+                <img class="img-mo" id="moImg" src="https://images.squarespace-cdn.com/content/v1/660a92f03f7a835a6db4be89/e8173663-7da9-4179-8d13-0941ca7569b9/image_4606e5.jpg" alt="Mõ Gỗ" onclick="playMo()">
+            </div>
+        </div>
+
         <div class="control-panel">
             <button class="panel-btn" onclick="burnIncense()">🔥 Thắp Hương</button>
             <button class="panel-btn" onclick="playMo()">🪵 Gõ Mõ</button>
@@ -167,7 +199,7 @@ function toggleDetail(id){
     box.style.display = (box.style.display === "block") ? "none" : "block";
 }
 
-// KHỞI TẠO TRAIN SÓNG ÂM SYNTHESIZER TIẾNG MÕ GỖ TRẦM ẤM
+// BỘ PHÁT TIẾNG MÕ BẰNG THUẬT TOÁN ÂM THANH SINE-WAVE
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function triggerMoSound() {
     let osc = audioCtx.createOscillator();
@@ -181,152 +213,44 @@ function triggerMoSound() {
     osc.start(); osc.stop(audioCtx.currentTime + 0.14);
 }
 
-// KHỞI TẠO HOÀN TOÀN BỘ ẢNH THẬT BẠN CUNG CẤP (TỰ ĐỘNG FIX BO GÓC BẰNG CODE)
-const canvas = document.getElementById("altarCanvas");
-const ctx = canvas.getContext("2d");
-const altarZone = document.getElementById("altarZone");
+let totalCongDuc = 0;
 
-const luHuongImg = new Image(); luHuongImg.src = 'https://images.squarespace-cdn.com/content/v1/660a92f03f7a835a6db4be89/76495be3-305f-4a00-ab64-caaf2b0a1a5b/image_4603bd.png';
-const moImg = new Image(); moImg.src = 'https://images.squarespace-cdn.com/content/v1/660a92f03f7a835a6db4be89/e8173663-7da9-4179-8d13-0941ca7569b9/image_4606e5.jpg';
-
-function resizeCanvas(){ canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
-resizeCanvas(); window.addEventListener("resize", resizeCanvas);
-
-let particles = []; let textPopups = [];
-let incenseTimer = 0; let moScale = 1; let totalCongDuc = 0;
-
+// LOGIC GÕ MÕ
 function playMo() {
     triggerMoSound();
-    moScale = 1.15; // Tạo xung lực co nảy cho ảnh mõ gỗ thật
     totalCongDuc++;
+    document.getElementById("txtCongDuc").innerText = `✨ TỔNG CÔNG ĐỨC TÍCH LŨY: ${totalCongDuc} 🙏`;
     
-    textPopups.push({
-        x: canvas.width / 2 + 130 + (Math.random()*30 - 15),
-        y: canvas.height / 2 + 30,
-        text: "Công Đức +1 🙏", alpha: 1, color: "#eab308"
-    });
-
-    // Phát tia hào quang vàng xung quanh Mõ
-    for(let i=0; i<8; i++) {
-        let angle = Math.random() * Math.PI * 2; let spd = Math.random() * 2.5 + 1.5;
-        particles.push({
-            x: canvas.width / 2 + 130, y: canvas.height / 2 + 90,
-            vx: Math.cos(angle)*spd, vy: Math.sin(angle)*spd,
-            radius: Math.random()*3+1.5, color: "#facc15", alpha: 1, life: 25, type: "spark"
-        });
-    }
+    // Hiệu ứng chữ "Công Đức +1" bay lên ngay trên đầu cái Mõ
+    let moArea = document.getElementById("moArea");
+    let popup = document.createElement("div");
+    popup.className = "popup-text";
+    popup.innerText = "Công Đức +1 🙏";
+    popup.style.left = "50%";
+    popup.style.top = "20px";
+    moArea.appendChild(popup);
+    
+    // Tự xóa chữ sau khi bay xong để nhẹ ram
+    setTimeout(() => { popup.remove(); }, 1000);
 }
 
+// LOGIC THẮP HƯƠNG BAY KHÓI NĂNG ĐỘNG
 function burnIncense() {
-    incenseTimer = 400; // Hương thắp cháy lâu hơn
-    textPopups.push({
-        x: canvas.width / 2 - 130, y: canvas.height / 2 + 10,
-        text: "Lòng Thành Chứng Giám ✨", alpha: 1, color: "#38bdf8"
-    });
-}
-
-// Bắt sự kiện click chuột chuẩn tọa độ đè trực tiếp lên vị trí Mõ Gỗ Thật
-altarZone.addEventListener("click", (e) => {
-    let rect = canvas.getBoundingClientRect();
-    let clickX = e.clientX - rect.left;
-    let clickY = e.clientY - rect.top;
-    let moX = canvas.width / 2 + 130;
-    let moY = canvas.height / 2 + 90;
+    let smokeBox = document.getElementById("smokeBox");
+    smokeBox.innerHTML = ""; // Xóa khói cũ nếu có
     
-    if (Math.sqrt((clickX - moX)**2 + (clickY - moY)**2) < 65) {
-        playMo();
+    // Tạo chuỗi hạt khói liên tục bay lên uốn lượn
+    for (let i = 0; i < 8; i++) {
+        setTimeout(() => {
+            let p = document.createElement("div");
+            p.className = "smoke-particle";
+            // Làm lệch vị trí khói một chút cho tự nhiên
+            p.style.left = `${40 + (Math.random() * 20 - 10)}%`;
+            p.style.animationDelay = `${i * 0.3}s`;
+            smokeBox.appendChild(p);
+        }, i * 100);
     }
-});
-
-// Vẽ bo tròn góc ảnh và tạo viền phát sáng mềm mại không sợ bị răng cưa nền vuông cũ
-function drawRoundedImage(img, x, y, width, height, radius, shadowColor) {
-    ctx.save();
-    ctx.shadowBlur = 20; ctx.shadowColor = shadowColor;
-    ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + width - radius, y); ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-    ctx.lineTo(x + width, y + height - radius); ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-    ctx.lineTo(x + radius, y + height); ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-    ctx.lineTo(x, y + radius); ctx.quadraticCurveTo(x, y, x + radius, y);
-    ctx.closePath(); ctx.clip();
-    ctx.drawImage(img, x, y, width, height);
-    ctx.restore();
 }
-
-function gameLoop() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Hiển thị tổng tích lũy tâm linh
-    ctx.font = "bold 15px 'Segoe UI'"; ctx.fillStyle = "rgba(234, 179, 8, 0.9)"; ctx.textAlign = "center";
-    ctx.fillText(`✨ TỔNG CÔNG ĐỨC TÍCH LŨY: ${totalCongDuc} 🙏`, canvas.width / 2, 45);
-
-    let centerX = canvas.width / 2;
-    let centerY = canvas.height / 2;
-
-    // Tính toán khói nhang
-    if (incenseTimer > 0) {
-        incenseTimer--;
-        if (Math.random() < 0.2) {
-            let smokePositions = [-135, -130, -125]; // Khói bốc lên chuẩn từ đỉnh miệng lư hương thật
-            smokePositions.forEach(pos => {
-                particles.push({
-                    x: centerX + pos, y: centerY + 30,
-                    vx: (Math.random() - 0.5) * 0.5, vy: -(Math.random() * 0.7 + 0.5),
-                    radius: Math.random() * 3 + 2, color: "rgba(241, 245, 249, 0.2)",
-                    alpha: 0.5, life: 120, type: "smoke"
-                });
-            });
-        }
-    }
-
-    // Vẽ hạt khói/tia lửa
-    particles.forEach((p, idx) => {
-        p.x += p.vx; p.y += p.vy;
-        if (p.type === "smoke") {
-            p.vx += (Math.sin(p.life * 0.04) * 0.02);
-            p.radius += 0.06; p.alpha -= 0.005;
-        } else {
-            p.alpha -= 0.04;
-        }
-        p.life--;
-
-        ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color;
-        if(p.type === "spark") { ctx.shadowBlur = 6; ctx.shadowColor = p.color; }
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2); ctx.fill(); ctx.restore();
-
-        if (p.life <= 0 || p.alpha <= 0) particles.splice(idx, 1);
-    });
-
-    // 1. Vẽ LƯ HƯƠNG ĐỒNG THẬT (Tự động bo mờ viền tránh lộ nền xám của ảnh)
-    drawRoundedImage(luHuongImg, centerX - 195, centerY + 15, 130, 115, 15, "rgba(234, 179, 8, 0.15)");
-    
-    // Đốm lửa tàn nhang đỏ khi thắp
-    if(incenseTimer > 0) {
-        ctx.fillStyle = "#f43f5e"; ctx.shadowBlur = 6; ctx.shadowColor = "#f43f5e";
-        ctx.beginPath(); ctx.arc(centerX - 135, centerY + 30, 2, 0, Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.arc(centerX - 130, centerY + 30, 2, 0, Math.PI*2); ctx.fill();
-        ctx.beginPath(); ctx.arc(centerX - 125, centerY + 30, 2, 0, Math.PI*2); ctx.fill();
-    }
-
-    // 2. Vẽ MÕ GỖ THẬT CÓ HIỆU ỨNG CO GIÃN ĐÀN HỒI (Scale biến thiên mềm mại)
-    moScale += (1.0 - moScale) * 0.14;
-    let currentW = 125 * moScale;
-    let currentH = 115 * moScale;
-    drawRoundedImage(moImg, centerX + 130 - currentW/2, centerY + 90 - currentH/2, currentW, currentH, 15, "rgba(251, 191, 36, 0.2)");
-
-    // 3. Render các luồng text bay lên (+1 công đức)
-    textPopups.forEach((t, idx) => {
-        t.y -= 0.9; t.alpha -= 0.014;
-        ctx.save(); ctx.font = "bold 16px 'Segoe UI'"; ctx.fillStyle = t.color;
-        ctx.globalAlpha = t.alpha; ctx.textAlign = "center";
-        ctx.shadowBlur = 4; ctx.shadowColor = t.color;
-        ctx.fillText(t.text, t.x, t.y); ctx.restore();
-        if (t.alpha <= 0) textPopups.splice(idx, 1);
-    });
-
-    requestAnimationFrame(gameLoop);
-}
-gameLoop();
 </script>
 
 </body>

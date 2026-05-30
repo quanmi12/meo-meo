@@ -13,9 +13,12 @@ USER1 = "hung2"
 URL2 = "https://sdtvip1.xyz/gambler/user/child/statistic"
 USER2 = "sdt29"
 
+# ===== LINK 3 (MỚI) =====
+URL3 = "https://lavar68.xyz/gambler/user/child/statistic"
+USER3 = "k5"
+
 
 def fetch_api(url, user, start_date, end_date, start_time, end_time):
-
     try:
         # ===== PARSE TIME =====
         start_local = datetime.strptime(
@@ -69,11 +72,10 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
         )
 
         r.raise_for_status()
-
         data = r.json().get("data", [])
 
     except Exception as e:
-        print("API ERROR:", e)
+        print(f"API ERROR ({user}):", e)
         data = []
 
     result = defaultdict(lambda: {
@@ -84,7 +86,6 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
     total = 0
 
     for item in data:
-
         game = item.get("gameName", "Unknown")
 
         try:
@@ -93,18 +94,14 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
                 .replace("$", "")
                 .replace(",", "")
             )
-
             count = int(item["count"])
-
         except:
             price = 0
             count = 0
 
         money = price * count
-
         result[game]["price"] += money
         result[game]["count"] += count
-
         total += money
 
     result = dict(
@@ -120,7 +117,6 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
 
 @app.route("/")
 def index():
-
     now = datetime.utcnow() + timedelta(hours=7)
 
     start_date = request.args.get("start_date") or now.strftime("%Y-%m-%d")
@@ -131,37 +127,35 @@ def index():
 
     # ===== API 1 =====
     result1, total1 = fetch_api(
-        URL1,
-        USER1,
-        start_date,
-        end_date,
-        start_time,
-        end_time
+        URL1, USER1, start_date, end_date, start_time, end_time
     )
 
     # ===== API 2 =====
     result2, total2 = fetch_api(
-        URL2,
-        USER2,
-        start_date,
-        end_date,
-        start_time,
-        end_time
+        URL2, USER2, start_date, end_date, start_time, end_time
     )
 
-    grand_total = total1 + total2
+    # ===== API 3 (MỚI) =====
+    result3, total3 = fetch_api(
+        URL3, USER3, start_date, end_date, start_time, end_time
+    )
+
+    # Cộng tổng cả 3 ví
+    grand_total = total1 + total2 + total3
 
     return render_template(
         "index.html",
-
         result=result1,
         total=total1,
 
         result2=result2,
         total2=total2,
 
-        grand_total=grand_total,
+        # Truyền thêm dữ liệu ví 3 sang HTML
+        result3=result3,
+        total3=total3,
 
+        grand_total=grand_total,
         start_date=start_date,
         end_date=end_date,
         start_time=start_time,

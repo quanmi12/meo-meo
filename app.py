@@ -5,11 +5,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
 
-WALLETS_NAMES = [
-    "Vua Trò Chơi", "Phép Thuật Win", "Enchatit", "Gâu Gâu 🐕🐕🐕", "Hắc Ám Vương",
-    "Triệu Phú Đô La", "Hũ Vàng Vô Tận", "Thần Tài Tới", "Đại Gia Ngầm", "Trùm Cuối K10"
-]
-
 def fetch_wallet_data(user_param, start_date_vn, end_date_vn, start_time_vn, end_time_vn):
     url = "https://lavar68.xyz/gambler/user/child/statistic"
     
@@ -17,6 +12,7 @@ def fetch_wallet_data(user_param, start_date_vn, end_date_vn, start_time_vn, end
         dt_start_vn = datetime.strptime(f"{start_date_vn} {start_time_vn}", "%Y-%m-%d %H:%M:%S")
         dt_end_vn = datetime.strptime(f"{end_date_vn} {end_time_vn}", "%Y-%m-%d %H:%M:%S")
         
+        # Tự động trừ 7 tiếng để chuyển từ giờ Việt Nam sang giờ hệ thống (UTC)
         dt_start_utc = dt_start_vn - timedelta(hours=7)
         dt_end_utc = dt_end_vn - timedelta(hours=7)
         
@@ -74,16 +70,17 @@ def index():
     start_time = request.args.get("start_time") or "00:00:00"
     end_time = request.args.get("end_time") or "23:59:59"
 
+    # Trả về tên gốc K1 -> K10 nguyên bản
     wallets_config = []
     for i in range(1, 11):
         wallets_config.append({
             "id": f"k{i}",
-            "name": WALLETS_NAMES[i-1],
+            "name": f"K{i}",
             "user": f"K{i}"
         })
 
     final_wallets = []
-    all_wallets_total = 0.0  # Biến lưu tổng tiền của tất cả các ví hợp lại
+    all_wallets_total = 0.0
     
     with ThreadPoolExecutor(max_workers=10) as executor:
         futures = [
@@ -92,7 +89,7 @@ def index():
         ]
         for w, future in zip(wallets_config, futures):
             res_data, total_money = future.result()
-            all_wallets_total += total_money  # Cộng dồn vào tổng hệ thống
+            all_wallets_total += total_money
             final_wallets.append({
                 "id": w["id"],
                 "name": w["name"],
@@ -105,7 +102,7 @@ def index():
         start_date=start_date, end_date=end_date,
         start_time=start_time, end_time=end_time,
         wallets=final_wallets,
-        all_wallets_total=all_wallets_total  # Gửi tổng hệ thống sang HTML
+        all_wallets_total=all_wallets_total
     )
 
 if __name__ == "__main__":

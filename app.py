@@ -7,8 +7,6 @@ app = Flask(__name__)
 
 def fetch_wallet_data(user_param, start_date, end_date, start_time, end_time):
     url = "https://lavar68.xyz/gambler/user/child/statistic"
-    
-    # Định dạng chuẩn ISO có chữ T và Z ở cuối y hệt payload thực tế của bạn
     iso_start = f"{start_date}T{start_time}.000Z"
     iso_end = f"{end_date}T{end_time}.999Z"
 
@@ -22,23 +20,13 @@ def fetch_wallet_data(user_param, start_date, end_date, start_time, end_time):
         "endDate": iso_end
     }
     
-    headers = {
-        "Content-Type": "application/json"
-    }
+    headers = {"Content-Type": "application/json"}
     
     try:
-        # In ra terminal để theo dõi xem payload truyền đi có đúng không
-        print(f"[GỬI API] Ví {user_param} | Khởi điểm: {iso_start} -> Kết thúc: {iso_end}")
-        
         res = requests.post(url, json=payload, headers=headers, timeout=10)
-        
         if res.status_code == 200:
             response_json = res.json()
             data_list = response_json.get("data", [])
-            
-            # Nếu API trả về mảng rỗng, thông báo ngay trong terminal
-            if not data_list:
-                print(f"[CẢNH BÁO] Ví {user_param} trả về không có dữ liệu (mảng rỗng []). Check lại khoảng thời gian!")
             
             game_summary = {}
             grand_total = 0.0
@@ -46,8 +34,6 @@ def fetch_wallet_data(user_param, start_date, end_date, start_time, end_time):
             for item in data_list:
                 game_name = item.get("gameName", "Unknown Game")
                 count = int(item.get("count", 1))
-                
-                # Bóc tách ký tự '$' khỏi chuỗi giá tiền (Ví dụ: "$4.99" -> 4.99)
                 price_str = item.get("price", "$0").replace("$", "").strip()
                 try:
                     price_val = float(price_str)
@@ -60,40 +46,24 @@ def fetch_wallet_data(user_param, start_date, end_date, start_time, end_time):
                 if game_name in game_summary:
                     game_summary[game_name]["price"] += item_total
                 else:
-                    game_summary[game_name] = {
-                        "price": item_total
-                    }
+                    game_summary[game_name] = {"price": item_total}
             
             return game_summary, grand_total
-        else:
-            print(f"[LỖI HỆ THỐNG] Ví {user_param} lỗi phản hồi mã: {res.status_code}")
     except Exception as e:
-        print(f"[LỖI KẾT NỐI] Không thể gọi tới API của ví {user_param}: {e}")
-        
+        print(f"Lỗi ví {user_param}: {e}")
     return {}, 0.0
 
 @app.route("/")
 def index():
-    # Lấy thời gian hiện tại
     now = datetime.utcnow() + timedelta(hours=7)
-    
-    # Mặc định ban đầu hiển thị: start_date là ngày hôm trước, end_date là ngày hôm nay để khoảng thời gian rộng hơn, tránh bị trống dữ liệu
     yesterday = now - timedelta(days=1)
     
     start_date = request.args.get("start_date") or yesterday.strftime("%Y-%m-%d")
     end_date = request.args.get("end_date") or now.strftime("%Y-%m-%d")
-    
-    # Đồng bộ chuỗi thời gian y hệt như logs log-in hệ thống của bạn
     start_time = request.args.get("start_time") or "17:00:00"
     end_time = request.args.get("end_time") or "16:59:59"
 
-    wallets_config = []
-    for i in range(1, 11):
-        wallets_config.append({
-            "id": f"k{i}",
-            "name": f"K{i}",
-            "user": f"K{i}"
-        })
+    wallets_config = [{"id": f"k{i}", "name": f"K{i}", "user": f"K{i}"} for i in range(1, 11)]
 
     final_wallets = []
     with ThreadPoolExecutor(max_workers=10) as executor:

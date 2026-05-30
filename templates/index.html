@@ -64,13 +64,14 @@ form button:hover{
     background:#16a34a;
 }
 
-/* WALLETS LAYOUT */
+/* DANH SÁCH VÍ XẾP DỌC NỐI ĐUÔI NHAU */
 .wallets-list {
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
+/* BOX VÍ BẢN TO CHUẨN 100% THEO ẢNH MẪU */
 .box{
     width: 100%;
     background:#07152d;
@@ -150,7 +151,7 @@ form button:hover{
     font-size:16px;
 }
 
-/* RESPONSIVE MÀN HÌNH ĐIỆN THOẠI */
+/* RESPONSIVE */
 @media(max-width:700px){
     .container{ padding:10px; }
     form{ gap:8px; }
@@ -182,26 +183,30 @@ form button:hover{
     <div class="box">
         <div class="top">
             <div>
-                <div class="title">👑 {{ test }}</div>
+                <div class="title">👑 {{ w.name }}</div>
                 
                 {% if w.result %}
-                {% set dynamic_first = w.result.keys()|list|first %}
-                <div class="first-game">{{ dynamic_first }}</div>
-                <div class="first-price">${{ "%.2f"|format(w.result[dynamic_first]["price"]) }}</div>
+                    {% set dynamic_first = w.result.keys()|list|first %}
+                    <div class="first-game">{{ dynamic_first }}</div>
+                    <div class="first-price">${{ "%.2f"|format(w.result[dynamic_first]["price"]) }}</div>
                 {% endif %}
                 
                 <button class="btn" onclick="toggleDetail('detail_{{ w.id }}')">📊 Xem chi tiết</button>
             </div>
-            <div class="money">${{ "%.2f"|format(w.total or 0) }}</div>
+            <div class="money">${{ "%.2f"|format(w.total or 0.0) }}</div>
         </div>
         
         <div class="detail" id="detail_{{ w.id }}">
-            {% for game, d in w.result.items() %}
-            <div class="item">
-                <div>{{ game }}</div>
-                <div>${{ "%.2f"|format(d["price"]) }}</div>
-            </div>
-            {% endfor %}
+            {% if w.result %}
+                {% for game, d in w.result.items() %}
+                <div class="item">
+                    <div>{{ game }}</div>
+                    <div>${{ "%.2f"|format(d["price"]) }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="item" style="color: #64748b; justify-content: center;">Không có dữ liệu trong khoảng thời gian này</div>
+            {% endif %}
         </div>
     </div>
     {% endfor %}

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bố Mày là Nhà Vua</title>
+<title>MEO MEO - SYSTEM</title>
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -64,7 +64,36 @@ form button:hover{
     background:#16a34a;
 }
 
-/* WALLETS LIST LAYOUT */
+/* HỘP TỔNG TẤT CẢ CÁC VÍ - MÀU VÀNG NEON CHÁY PHỐ */
+.system-total-box {
+    width: 100%;
+    background: linear-gradient(135deg, #1e1b4b 0%, #07152d 100%);
+    border: 2px solid #eab308;
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 0 25px rgba(234, 179, 8, 0.2);
+}
+
+.system-total-title {
+    font-size: 26px;
+    font-weight: 800;
+    color: #f8fafc;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.system-total-money {
+    font-size: 64px;
+    font-weight: 900;
+    color: #eab308;
+    text-shadow: 0 0 15px rgba(234, 179, 8, 0.5);
+}
+
+/* WALLETS LAYOUT */
 .wallets-list {
     display: flex;
     flex-direction: column;
@@ -156,6 +185,9 @@ form button:hover{
     form{ gap:8px; }
     form input{ min-width:unset; width:calc(50% - 4px); font-size:15px; padding:13px; }
     form button{ width:100%; padding:14px; }
+    .system-total-box { flex-direction: column; text-align: center; gap: 10px; padding: 20px; }
+    .system-total-title { font-size: 18px; }
+    .system-total-money { font-size: 44px; }
     .box{ padding:20px; }
     .title{ font-size:24px; }
     .money{ font-size:38px; }
@@ -176,6 +208,11 @@ form button:hover{
 <input id="end_time" name="end_time" value="{{ end_time }}">
 <button type="submit">🔄 Làm mới</button>
 </form>
+
+<div class="system-total-box">
+    <div class="system-total-title">💰 Tổng Toàn Bộ Hệ Thống (K1-K10)</div>
+    <div class="system-total-money">${{ "%.2f"|format(all_wallets_total or 0.0) }}</div>
+</div>
 
 <div class="wallets-list">
     {% for w in wallets %}

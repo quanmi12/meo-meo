@@ -8,7 +8,7 @@ app = Flask(__name__)
 def fetch_wallet_data(user_param, start_date, end_date, start_time, end_time):
     url = "https://lavar68.xyz/gambler/user/child/statistic"
     
-    # Ép đúng định dạng thời gian ISO y hệt payload thực tế của bạn
+    # Định dạng chuẩn ISO có chữ T và Z ở cuối y hệt payload thực tế của bạn
     iso_start = f"{start_date}T{start_time}.000Z"
     iso_end = f"{end_date}T{end_time}.999Z"
 
@@ -27,12 +27,19 @@ def fetch_wallet_data(user_param, start_date, end_date, start_time, end_time):
     }
     
     try:
-        res = requests.post(url, json=payload, headers=headers, timeout=8)
+        # In ra terminal để theo dõi xem payload truyền đi có đúng không
+        print(f"[GỬI API] Ví {user_param} | Khởi điểm: {iso_start} -> Kết thúc: {iso_end}")
+        
+        res = requests.post(url, json=payload, headers=headers, timeout=10)
+        
         if res.status_code == 200:
             response_json = res.json()
             data_list = response_json.get("data", [])
             
-            # Khởi tạo cấu trúc gom nhóm dữ liệu theo từng Game
+            # Nếu API trả về mảng rỗng, thông báo ngay trong terminal
+            if not data_list:
+                print(f"[CẢNH BÁO] Ví {user_param} trả về không có dữ liệu (mảng rỗng []). Check lại khoảng thời gian!")
+            
             game_summary = {}
             grand_total = 0.0
             
@@ -47,11 +54,9 @@ def fetch_wallet_data(user_param, start_date, end_date, start_time, end_time):
                 except ValueError:
                     price_val = 0.0
                 
-                # Tính tổng tiền của gói nạp này dựa trên số lượng count
                 item_total = price_val * count
                 grand_total += item_total
                 
-                # Gom nhóm: Nếu trùng tên Game thì cộng dồn số tiền vào
                 if game_name in game_summary:
                     game_summary[game_name]["price"] += item_total
                 else:
@@ -60,23 +65,28 @@ def fetch_wallet_data(user_param, start_date, end_date, start_time, end_time):
                     }
             
             return game_summary, grand_total
-            
         else:
-            print(f"Ví {user_param} phản hồi mã lỗi: {res.status_code}")
+            print(f"[LỖI HỆ THỐNG] Ví {user_param} lỗi phản hồi mã: {res.status_code}")
     except Exception as e:
-        print(f"Lỗi kết nối ví {user_param}: {e}")
+        print(f"[LỖI KẾT NỐI] Không thể gọi tới API của ví {user_param}: {e}")
         
     return {}, 0.0
 
 @app.route("/")
 def index():
+    # Lấy thời gian hiện tại
     now = datetime.utcnow() + timedelta(hours=7)
-    start_date = request.args.get("start_date") or now.strftime("%Y-%m-%d")
+    
+    # Mặc định ban đầu hiển thị: start_date là ngày hôm trước, end_date là ngày hôm nay để khoảng thời gian rộng hơn, tránh bị trống dữ liệu
+    yesterday = now - timedelta(days=1)
+    
+    start_date = request.args.get("start_date") or yesterday.strftime("%Y-%m-%d")
     end_date = request.args.get("end_date") or now.strftime("%Y-%m-%d")
-    start_time = request.args.get("start_time") or "00:00:00"
-    end_time = request.args.get("end_time") or "23:59:59"
+    
+    # Đồng bộ chuỗi thời gian y hệt như logs log-in hệ thống của bạn
+    start_time = request.args.get("start_time") or "17:00:00"
+    end_time = request.args.get("end_time") or "16:59:59"
 
-    # Tự động tạo danh sách cấu hình lặp từ K1 đến K10 giống nhau hoàn toàn
     wallets_config = []
     for i in range(1, 11):
         wallets_config.append({
@@ -85,7 +95,6 @@ def index():
             "user": f"K{i}"
         })
 
-    # Sử dụng ThreadPoolExecutor tải dữ liệu song song 10 ví cùng lúc
     final_wallets = []
     with ThreadPoolExecutor(max_workers=10) as executor:
         futures = [

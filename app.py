@@ -13,9 +13,12 @@ USER1 = "hung3"
 URL2 = "https://crossfirelegend.xyz/gambler/user/child/statistic"
 USER2 = "ht1"
 
+# ===== LINK 3 (THÊM MỚI) =====
+URL3 = "https://crossfirelegend.xyz/gambler/user/child/statistic"
+USER3 = "ht2"
+
 
 def fetch_api(url, user, start_date, end_date, start_time, end_time):
-
     try:
         # ===== PARSE TIME =====
         start_local = datetime.strptime(
@@ -84,7 +87,6 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
     total = 0
 
     for item in data:
-
         game = item.get("gameName", "Unknown")
 
         try:
@@ -93,9 +95,7 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
                 .replace("$", "")
                 .replace(",", "")
             )
-
             count = int(item["count"])
-
         except:
             price = 0
             count = 0
@@ -120,7 +120,6 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
 
 @app.route("/")
 def index():
-
     now = datetime.utcnow() + timedelta(hours=7)
 
     start_date = request.args.get("start_date") or now.strftime("%Y-%m-%d")
@@ -149,7 +148,17 @@ def index():
         end_time
     )
 
-    grand_total = total1 + total2
+    # ===== API 3 =====
+    result3, total3 = fetch_api(
+        URL3,
+        USER3,
+        start_date,
+        end_date,
+        start_time,
+        end_time
+    )
+
+    grand_total = total1 + total2 + total3
 
     return render_template(
         "index.html",
@@ -159,6 +168,9 @@ def index():
 
         result2=result2,
         total2=total2,
+
+        result3=result3,
+        total3=total3,
 
         grand_total=grand_total,
 

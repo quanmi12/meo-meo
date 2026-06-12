@@ -15,7 +15,7 @@ USER2 = "ht1"
 
 # ===== LINK 3 (THÊM MỚI) =====
 URL3 = "https://crossfirelegend.xyz/gambler/user/child/statistic"
-USER3 = "ht2"
+USER3 = "Grakk Mèo Thần Tài"
 
 
 def fetch_api(url, user, start_date, end_date, start_time, end_time):

@@ -10,8 +10,8 @@ URL1 = "https://boeingvip.xyz/gambler/user/child/statistic"
 USER1 = "hung3"
 
 # ===== LINK 2 =====
-URL2 = "https://sdtvip1.xyz/gambler/user/child/statistic"
-USER2 = "sdt29"
+URL2 = "https://crossfirelegend.xyz/gambler/user/child/statistic"
+USER2 = "ht1"
 
 
 def fetch_api(url, user, start_date, end_date, start_time, end_time):

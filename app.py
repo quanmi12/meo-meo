@@ -2,6 +2,7 @@ from flask import Flask, render_template, request
 import requests
 from collections import defaultdict
 from datetime import datetime, timedelta
+import re
 
 app = Flask(__name__)
 
@@ -90,13 +91,23 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
         game = item.get("gameName", "Unknown")
 
         try:
-            price = float(
-                item["price"]
-                .replace("$", "")
-                .replace(",", "")
-            )
-            count = int(item["count"])
-        except:
+            # Lấy chuỗi giá tiền gốc từ API (ví dụ: "$0.49" hoặc "0,49 US$")
+            raw_price = item.get("price", "0")
+            
+            # Xóa sạch các ký tự chữ hoặc ký hiệu lạ, chỉ giữ lại số, dấu chấm, dấu phẩy
+            clean_str = re.sub(r'[^\d.,]', '', raw_price.strip())
+            
+            # Nếu chuỗi có dấu phẩy thập phân kiểu Pháp/Việt (0,49), đổi thành dấu chấm (0.49)
+            if ',' in clean_str and '.' not in clean_str:
+                clean_str = clean_str.replace(',', '.')
+            elif ',' in clean_str and '.' in clean_str:
+                # Trường hợp có cả hai (ví dụ 1,234.56) thì xóa dấu phẩy hàng nghìn đi
+                clean_str = clean_str.replace(',', '')
+                
+            price = float(clean_str)
+            count = int(item.get("count", 0))
+        except Exception as e:
+            print(f"Lỗi parse giá game {game}: {e}")
             price = 0
             count = 0
 

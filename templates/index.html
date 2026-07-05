@@ -19,19 +19,20 @@
         .game-count { font-size: 0.85rem; color: #64748b; margin-left: 5px; }
         .btn-refresh { background-color: #00ff88; color: #0b111e; font-weight: 600; }
         input { background-color: #1e293b !important; border: 1px solid #334155 !important; color: white !important; }
+        .group-heading { font-size: 1.6rem; font-weight: 800; color: #38bdf8; border-left: 5px solid #38bdf8; padding-left: 12px; margin-top: 20px; margin-bottom: 20px; text-transform: uppercase; }
+        .group-heading.thanh-team { color: #a855f7; border-left-color: #a855f7; }
+        .group-divider { border-top: 2px dashed #1e2638; margin: 40px 0; }
     </style>
 </head>
 <body>
 
 <div class="container py-4">
     
-    <!-- TỔNG DOANH THU -->
     <div class="grand-total-box">
         <div class="text-uppercase small fw-bold mb-1 text-muted">Tổng Doanh Thu Tất Cả Ví</div>
         <div class="grand-total-val">${{ "%.2f"|format(grand_total) }}</div>
     </div>
 
-    <!-- BỘ LỌC THỜI GIAN -->
     <div class="filter-box">
         <form method="GET" action="/" class="row g-3 align-items-end">
             <div class="col-md-3">
@@ -56,14 +57,13 @@
         </form>
     </div>
 
-    <!-- DANH SÁCH 13 CỘT VÍ RIÊNG BIỆT -->
+    <div class="group-heading">💼 Khu vực Ví Hệ HT / HUNG</div>
     <div class="row">
         
-        <!-- VÍ 1 -->
         <div class="col-md-6">
             <div class="wallet-card">
                 <div class="wallet-title">
-                    <span>👑 ht3</span>
+                    <span>👑 Phép Thuật Win</span>
                     <span class="wallet-total">${{ "%.2f"|format(total1) }}</span>
                 </div>
                 <div class="wallet-body">
@@ -77,11 +77,10 @@
             </div>
         </div>
 
-        <!-- VÍ 2 -->
         <div class="col-md-6">
             <div class="wallet-card">
                 <div class="wallet-title">
-                    <span>👑 ht1</span>
+                    <span>👑 Enchatit</span>
                     <span class="wallet-total">${{ "%.2f"|format(total2) }}</span>
                 </div>
                 <div class="wallet-body">
@@ -95,11 +94,10 @@
             </div>
         </div>
 
-        <!-- VÍ 3 -->
         <div class="col-md-6">
             <div class="wallet-card">
                 <div class="wallet-title">
-                    <span>👑 ht2</span>
+                    <span>👑 Grakk Mèo Thần Tài</span>
                     <span class="wallet-total">${{ "%.2f"|format(total3) }}</span>
                 </div>
                 <div class="wallet-body">
@@ -113,11 +111,17 @@
             </div>
         </div>
 
-        <!-- VÍ 4 -->
+    </div>
+
+    <div class="group-divider"></div>
+
+    <div class="group-heading thanh-team">💸 Khu vực Ví Hệ THANH (1 - 10)</div>
+    <div class="row">
+        
         <div class="col-md-6">
             <div class="wallet-card">
                 <div class="wallet-title">
-                    <span>👑 thanh1</span>
+                    <span>👑 Ví thanh1</span>
                     <span class="wallet-total">${{ "%.2f"|format(total4) }}</span>
                 </div>
                 <div class="wallet-body">
@@ -131,11 +135,10 @@
             </div>
         </div>
 
-        <!-- VÍ 5 -->
         <div class="col-md-6">
             <div class="wallet-card">
                 <div class="wallet-title">
-                    <span>👑 thanh2</span>
+                    <span>👑 Ví thanh2</span>
                     <span class="wallet-total">${{ "%.2f"|format(total5) }}</span>
                 </div>
                 <div class="wallet-body">
@@ -149,11 +152,10 @@
             </div>
         </div>
 
-        <!-- VÍ 6 -->
         <div class="col-md-6">
             <div class="wallet-card">
                 <div class="wallet-title">
-                    <span>👑 (thanh3)</span>
+                    <span>👑 Ví thanh3</span>
                     <span class="wallet-total">${{ "%.2f"|format(total6) }}</span>
                 </div>
                 <div class="wallet-body">
@@ -167,11 +169,10 @@
             </div>
         </div>
 
-        <!-- VÍ 7 -->
         <div class="col-md-6">
             <div class="wallet-card">
                 <div class="wallet-title">
-                    <span>👑 (thanh4)</span>
+                    <span>👑 Ví thanh4</span>
                     <span class="wallet-total">${{ "%.2f"|format(total7) }}</span>
                 </div>
                 <div class="wallet-body">
@@ -185,11 +186,10 @@
             </div>
         </div>
 
-        <!-- VÍ 8 -->
         <div class="col-md-6">
             <div class="wallet-card">
                 <div class="wallet-title">
-                    <span>👑 (thanh5)</span>
+                    <span>👑 Ví thanh5</span>
                     <span class="wallet-total">${{ "%.2f"|format(total8) }}</span>
                 </div>
                 <div class="wallet-body">
@@ -203,11 +203,10 @@
             </div>
         </div>
 
-        <!-- VÍ 9 -->
         <div class="col-md-6">
             <div class="wallet-card">
                 <div class="wallet-title">
-                    <span>👑 (thanh6)</span>
+                    <span>👑 Ví thanh6</span>
                     <span class="wallet-total">${{ "%.2f"|format(total9) }}</span>
                 </div>
                 <div class="wallet-body">
@@ -221,11 +220,10 @@
             </div>
         </div>
 
-        <!-- VÍ 10 -->
         <div class="col-md-6">
             <div class="wallet-card">
                 <div class="wallet-title">
-                    <span>👑 (thanh7)</span>
+                    <span>👑 Ví thanh7</span>
                     <span class="wallet-total">${{ "%.2f"|format(total10) }}</span>
                 </div>
                 <div class="wallet-body">
@@ -239,11 +237,10 @@
             </div>
         </div>
 
-        <!-- VÍ 11 -->
         <div class="col-md-6">
             <div class="wallet-card">
                 <div class="wallet-title">
-                    <span>👑 (thanh8)</span>
+                    <span>👑 Ví thanh8</span>
                     <span class="wallet-total">${{ "%.2f"|format(total11) }}</span>
                 </div>
                 <div class="wallet-body">
@@ -257,11 +254,10 @@
             </div>
         </div>
 
-        <!-- VÍ 12 -->
         <div class="col-md-6">
             <div class="wallet-card">
                 <div class="wallet-title">
-                    <span>👑 (thanh9)</span>
+                    <span>👑 Ví thanh9</span>
                     <span class="wallet-total">${{ "%.2f"|format(total12) }}</span>
                 </div>
                 <div class="wallet-body">
@@ -275,11 +271,10 @@
             </div>
         </div>
 
-        <!-- VÍ 13 -->
         <div class="col-md-6">
             <div class="wallet-card">
                 <div class="wallet-title">
-                    <span>👑 (thanh10)</span>
+                    <span>👑 Ví thanh10</span>
                     <span class="wallet-total">${{ "%.2f"|format(total13) }}</span>
                 </div>
                 <div class="wallet-body">
@@ -296,6 +291,6 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

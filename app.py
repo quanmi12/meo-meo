@@ -27,15 +27,19 @@ WALLETS_CONFIG = [
 
 def fetch_api(url, user, start_date, end_date, start_time, end_time):
     try:
-        # 1. Chuyển chuỗi ngày giờ từ giao diện thành đối tượng datetime (đang là giờ VN)
-        start_local = datetime.strptime(f"{start_date} {start_time}", "%Y-%m-%d %H:%M:%S")
-        end_local = datetime.strptime(f"{end_date} {end_time}", "%Y-%m-%d %H:%M:%S")
+        # Chuẩn hóa chuỗi thời gian đầu vào từ dạng 12h sang định dạng datetime đối tượng sạch
+        # Phòng trường hợp trình duyệt tự gửi kèm ký tự PM/AM hoặc SA/CH ẩn
+        cleaned_start_time = start_time.split()[0]
+        cleaned_end_time = end_time.split()[0]
 
-        # 2. Trừ đi 7 tiếng để đưa về giờ UTC chuẩn quốc tế trước khi đóng gói có chữ Z
+        start_local = datetime.strptime(f"{start_date} {cleaned_start_time}", "%Y-%m-%d %H:%M:%S")
+        end_local = datetime.strptime(f"{end_date} {cleaned_end_time}", "%Y-%m-%d %H:%M:%S")
+
+        # Trừ 7 tiếng của VN để đổi về giờ chuẩn quốc tế UTC trước khi gửi lên API hệ thống gốc
         start_utc = start_local - timedelta(hours=7)
         end_utc = end_local - timedelta(hours=7)
 
-        # 3. Format đúng cấu trúc ISO kèm chữ Z ở cuối để API xử lý được
+        # Định dạng chuẩn ISO gửi lên API bao gồm hậu tố Z
         start_utc_str = start_utc.strftime("%Y-%m-%dT%H:%M:%S.000Z")
         end_utc_str = end_utc.strftime("%Y-%m-%dT%H:%M:%S.999Z")
 
@@ -59,7 +63,7 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
             "X-Requested-With": "XMLHttpRequest"
         }
 
-        r = requests.post(url, json=payload, headers=headers, timeout=10)
+        r = requests.post(url, json=payload, headers=headers, timeout=12)
         r.raise_for_status()
         data = r.json().get("data", [])
     except Exception as e:
@@ -73,7 +77,7 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
         game = item.get("gameName", "Unknown")
         try:
             raw_price = item.get("price", "0")
-            # Chuẩn hóa chuỗi tiền tệ lạ chứa dấu phẩy hoặc ký tự đặc biệt (ví dụ: "0,49 US$")
+            # Loại bỏ các ký tự chữ, giữ lại số và dấu chấm phân tách thập phân
             clean_str = re.sub(r'[^\d.,]', '', raw_price.strip())
             if ',' in clean_str and '.' not in clean_str:
                 clean_str = clean_str.replace(',', '.')
@@ -96,10 +100,8 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
 
 @app.route("/")
 def index():
-    # Lấy thời gian thực tại thời điểm load web theo giờ Việt Nam (UTC+7)
     now_vn = datetime.utcnow() + timedelta(hours=7)
 
-    # Nếu người dùng chưa chọn ngày thì tự động lấy ngày hôm nay theo giờ VN
     start_date = request.args.get("start_date") or now_vn.strftime("%Y-%m-%d")
     end_date = request.args.get("end_date") or now_vn.strftime("%Y-%m-%d")
     start_time = request.args.get("start_time") or "00:00:00"

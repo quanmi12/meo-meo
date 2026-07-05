@@ -3,7 +3,7 @@ import requests
 from collections import defaultdict
 from datetime import datetime, timedelta
 import re
-from concurrent.futures import ThreadPoolExecutor # Thư viện giúp chạy song song
+from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
 
@@ -27,18 +27,18 @@ WALLETS_CONFIG = [
 
 def fetch_api(url, user, start_date, end_date, start_time, end_time):
     try:
-        start_local = datetime.strptime(f"{start_date} {start_time}", "%Y-%m-%d %H:%M:%S")
-        end_local = datetime.strptime(f"{end_date} {end_time}", "%Y-%m-%d %H:%M:%S")
-
-        start_utc = start_local - timedelta(hours=7)
-        end_utc = end_local - timedelta(hours=7)
-
-        start_utc_str = start_utc.strftime("%Y-%m-%dT%H:%M:%S.000Z")
-        end_utc_str = end_utc.strftime("%Y-%m-%dT%H:%M:%S.999Z")
+        # Giữ nguyên chuỗi ngày giờ theo đúng múi giờ Việt Nam (không lùi 7 tiếng nữa)
+        start_utc_str = f"{start_date}T{start_time}.000Z"
+        end_utc_str = f"{end_date}T{end_time}.999Z"
 
         payload = {
-            "shopId": None, "packageName": "", "assigned": user, "productId": "",
-            "action": "import_token", "startDate": start_utc_str, "endDate": end_utc_str
+            "shopId": None, 
+            "packageName": "", 
+            "assigned": user, 
+            "productId": "",
+            "action": "import_token", 
+            "startDate": start_utc_str, 
+            "endDate": end_utc_str
         }
 
         domain = url.split("/")[2]
@@ -51,7 +51,6 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
             "X-Requested-With": "XMLHttpRequest"
         }
 
-        # Giới hạn timeout 8 giây để nếu có ví lỗi thì bỏ qua luôn, không làm sập web
         r = requests.post(url, json=payload, headers=headers, timeout=8)
         r.raise_for_status()
         data = r.json().get("data", [])
@@ -88,18 +87,18 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
 
 @app.route("/")
 def index():
-    now = datetime.utcnow() + timedelta(hours=7)
-    start_date = request.args.get("start_date") or now.strftime("%Y-%m-%d")
-    end_date = request.args.get("end_date") or now.strftime("%Y-%m-%d")
+    # Lấy thời gian hiện tại theo đúng múi giờ Việt Nam (UTC+7)
+    now_vn = datetime.utcnow() + timedelta(hours=7)
+
+    start_date = request.args.get("start_date") or now_vn.strftime("%Y-%m-%d")
+    end_date = request.args.get("end_date") or now_vn.strftime("%Y-%m-%d")
     start_time = request.args.get("start_time") or "00:00:00"
     end_time = request.args.get("end_time") or "23:59:59"
 
-    # Hàm trung gian hỗ trợ đa luồng
     def worker(wallet):
         res, tot = fetch_api(wallet["url"], wallet["user"], start_date, end_date, start_time, end_time)
         return wallet["id"], res, tot
 
-    # Kích hoạt chế độ chạy song song 13 luồng cùng lúc
     all_results = {}
     with ThreadPoolExecutor(max_workers=13) as executor:
         futures = [executor.submit(worker, w) for w in WALLETS_CONFIG]
@@ -108,7 +107,6 @@ def index():
             all_results[f"result{w_id}"] = res
             all_results[f"total{w_id}"] = tot
 
-    # Tính tổng tổng
     grand_total = sum(all_results[f"total{i}"] for i in range(1, 14))
 
     return render_template(
@@ -116,7 +114,7 @@ def index():
         grand_total=grand_total,
         start_date=start_date, end_date=end_date,
         start_time=start_time, end_time=end_time,
-        **all_results # Giải nén tự động thành result1, total1, result2, total2...
+        **all_results
     )
 
 

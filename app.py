@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 # ===== ĐƯỜNG DẪN 13 USER VÍ =====
 WALLETS_CONFIG = [
-    {"id": 1, "url": "https://crossfirelegend.xyz/gambler/user/child/statistic", "user": "ht3"},
+    {"id": 1, "url": "https://boeingvip.xyz/gambler/user/child/statistic", "user": "hung3"},
     {"id": 2, "url": "https://crossfirelegend.xyz/gambler/user/child/statistic", "user": "ht1"},
     {"id": 3, "url": "https://crossfirelegend.xyz/gambler/user/child/statistic", "user": "ht2"},
     {"id": 4, "url": "https://crossfirelegend.xyz/gambler/user/child/statistic", "user": "thanh1"},
@@ -27,9 +27,9 @@ WALLETS_CONFIG = [
 
 def fetch_api(url, user, start_date, end_date, start_time, end_time):
     try:
-        # Giữ nguyên chuỗi ngày giờ theo đúng múi giờ Việt Nam (không lùi 7 tiếng nữa)
-        start_utc_str = f"{start_date}T{start_time}.000Z"
-        end_utc_str = f"{end_date}T{end_time}.999Z"
+        # Xóa chữ Z ở cuối để tránh API nhận diện sai lệch múi giờ quốc tế
+        start_str = f"{start_date}T{start_time}.000"
+        end_str = f"{end_date}T{end_time}.999"
 
         payload = {
             "shopId": None, 
@@ -37,8 +37,8 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
             "assigned": user, 
             "productId": "",
             "action": "import_token", 
-            "startDate": start_utc_str, 
-            "endDate": end_utc_str
+            "startDate": start_str, 
+            "endDate": end_str
         }
 
         domain = url.split("/")[2]
@@ -47,11 +47,11 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
             "Content-Type": "application/json",
             "Origin": f"https://{domain}",
             "Referer": f"https://{domain}/thong-ke-nap?user={user}",
-            "User-Agent": "Mozilla/5.0",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "X-Requested-With": "XMLHttpRequest"
         }
 
-        r = requests.post(url, json=payload, headers=headers, timeout=8)
+        r = requests.post(url, json=payload, headers=headers, timeout=10)
         r.raise_for_status()
         data = r.json().get("data", [])
     except Exception as e:
@@ -65,6 +65,7 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
         game = item.get("gameName", "Unknown")
         try:
             raw_price = item.get("price", "0")
+            # Chuẩn hóa chuỗi tiền tệ lạ chứa dấu phẩy (ví dụ: 0,49 US$)
             clean_str = re.sub(r'[^\d.,]', '', raw_price.strip())
             if ',' in clean_str and '.' not in clean_str:
                 clean_str = clean_str.replace(',', '.')
@@ -87,7 +88,6 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
 
 @app.route("/")
 def index():
-    # Lấy thời gian hiện tại theo đúng múi giờ Việt Nam (UTC+7)
     now_vn = datetime.utcnow() + timedelta(hours=7)
 
     start_date = request.args.get("start_date") or now_vn.strftime("%Y-%m-%d")

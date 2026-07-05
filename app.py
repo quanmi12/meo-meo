@@ -27,9 +27,17 @@ WALLETS_CONFIG = [
 
 def fetch_api(url, user, start_date, end_date, start_time, end_time):
     try:
-        # Xóa chữ Z ở cuối để tránh API nhận diện sai lệch múi giờ quốc tế
-        start_str = f"{start_date}T{start_time}.000"
-        end_str = f"{end_date}T{end_time}.999"
+        # 1. Chuyển chuỗi ngày giờ từ giao diện thành đối tượng datetime (đang là giờ VN)
+        start_local = datetime.strptime(f"{start_date} {start_time}", "%Y-%m-%d %H:%M:%S")
+        end_local = datetime.strptime(f"{end_date} {end_time}", "%Y-%m-%d %H:%M:%S")
+
+        # 2. Trừ đi 7 tiếng để đưa về giờ UTC chuẩn quốc tế trước khi đóng gói có chữ Z
+        start_utc = start_local - timedelta(hours=7)
+        end_utc = end_local - timedelta(hours=7)
+
+        # 3. Format đúng cấu trúc ISO kèm chữ Z ở cuối để API xử lý được
+        start_utc_str = start_utc.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+        end_utc_str = end_utc.strftime("%Y-%m-%dT%H:%M:%S.999Z")
 
         payload = {
             "shopId": None, 
@@ -37,8 +45,8 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
             "assigned": user, 
             "productId": "",
             "action": "import_token", 
-            "startDate": start_str, 
-            "endDate": end_str
+            "startDate": start_utc_str, 
+            "endDate": end_utc_str
         }
 
         domain = url.split("/")[2]
@@ -65,7 +73,7 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
         game = item.get("gameName", "Unknown")
         try:
             raw_price = item.get("price", "0")
-            # Chuẩn hóa chuỗi tiền tệ lạ chứa dấu phẩy (ví dụ: 0,49 US$)
+            # Chuẩn hóa chuỗi tiền tệ lạ chứa dấu phẩy hoặc ký tự đặc biệt (ví dụ: "0,49 US$")
             clean_str = re.sub(r'[^\d.,]', '', raw_price.strip())
             if ',' in clean_str and '.' not in clean_str:
                 clean_str = clean_str.replace(',', '.')
@@ -88,8 +96,10 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
 
 @app.route("/")
 def index():
+    # Lấy thời gian thực tại thời điểm load web theo giờ Việt Nam (UTC+7)
     now_vn = datetime.utcnow() + timedelta(hours=7)
 
+    # Nếu người dùng chưa chọn ngày thì tự động lấy ngày hôm nay theo giờ VN
     start_date = request.args.get("start_date") or now_vn.strftime("%Y-%m-%d")
     end_date = request.args.get("end_date") or now_vn.strftime("%Y-%m-%d")
     start_time = request.args.get("start_time") or "00:00:00"

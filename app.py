@@ -7,8 +7,8 @@ import re
 app = Flask(__name__)
 
 # ===== LINK 1 =====
-URL1 = "https://boeingvip.xyz/gambler/user/child/statistic"
-USER1 = "hung3"
+URL1 = "https://crossfirelegend.xyz/gambler/user/child/statistic"
+USER1 = "ht3"
 
 # ===== LINK 2 =====
 URL2 = "https://crossfirelegend.xyz/gambler/user/child/statistic"

@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 app = Flask(__name__)
 
 WALLETS_CONFIG = [
-    {"id": 1, "url": "https://boeingvip.xyz/gambler/user/child/statistic", "user": "hung3"},
+    {"id": 1, "url": "https://crossfirelegend.xyz/gambler/user/child/statistic", "user": "ht3"},
     {"id": 2, "url": "https://crossfirelegend.xyz/gambler/user/child/statistic", "user": "ht1"},
     {"id": 3, "url": "https://crossfirelegend.xyz/gambler/user/child/statistic", "user": "ht2"},
     {"id": 4, "url": "https://crossfirelegend.xyz/gambler/user/child/statistic", "user": "thanh1"},

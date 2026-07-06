@@ -7,9 +7,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 app = Flask(__name__)
 
-# ===== ĐƯỜNG DẪN 13 USER VÍ =====
 WALLETS_CONFIG = [
-    {"id": 1, "url": "https://crossfirelegend.xyz/gambler/user/child/statistic", "user": "ht3"},
+    {"id": 1, "url": "https://boeingvip.xyz/gambler/user/child/statistic", "user": "hung3"},
     {"id": 2, "url": "https://crossfirelegend.xyz/gambler/user/child/statistic", "user": "ht1"},
     {"id": 3, "url": "https://crossfirelegend.xyz/gambler/user/child/statistic", "user": "ht2"},
     {"id": 4, "url": "https://crossfirelegend.xyz/gambler/user/child/statistic", "user": "thanh1"},
@@ -24,24 +23,19 @@ WALLETS_CONFIG = [
     {"id": 13, "url": "https://crossfirelegend.xyz/gambler/user/child/statistic", "user": "thanh10"},
 ]
 
-
 def fetch_api(url, user, start_date, end_date, start_time, end_time):
     try:
-        # Chuẩn hóa chuỗi thời gian đầu vào từ dạng 12h sang định dạng datetime đối tượng sạch
-        # Phòng trường hợp trình duyệt tự gửi kèm ký tự PM/AM hoặc SA/CH ẩn
-        cleaned_start_time = start_time.split()[0]
-        cleaned_end_time = end_time.split()[0]
+        # Loại bỏ các kí tự khoảng trắng thừa
+        st = start_time.strip()
+        et = end_time.strip()
 
-        start_local = datetime.strptime(f"{start_date} {cleaned_start_time}", "%Y-%m-%d %H:%M:%S")
-        end_local = datetime.strptime(f"{end_date} {cleaned_end_time}", "%Y-%m-%d %H:%M:%S")
+        # Parse chuỗi từ giao diện (đang chạy chuẩn múi giờ VN)
+        start_local = datetime.strptime(f"{start_date} {st}", "%Y-%m-%d %H:%M:%S")
+        end_local = datetime.strptime(f"{end_date} {et}", "%Y-%m-%d %H:%M:%S")
 
-        # Trừ 7 tiếng của VN để đổi về giờ chuẩn quốc tế UTC trước khi gửi lên API hệ thống gốc
+        # Trừ đi 7 tiếng để ép về định dạng UTC chuẩn hóa cho API backend của họ nhận diện
         start_utc = start_local - timedelta(hours=7)
         end_utc = end_local - timedelta(hours=7)
-
-        # Định dạng chuẩn ISO gửi lên API bao gồm hậu tố Z
-        start_utc_str = start_utc.strftime("%Y-%m-%dT%H:%M:%S.000Z")
-        end_utc_str = end_utc.strftime("%Y-%m-%dT%H:%M:%S.999Z")
 
         payload = {
             "shopId": None, 
@@ -49,8 +43,8 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
             "assigned": user, 
             "productId": "",
             "action": "import_token", 
-            "startDate": start_utc_str, 
-            "endDate": end_utc_str
+            "startDate": start_utc.strftime("%Y-%m-%dT%H:%M:%S.000Z"), 
+            "endDate": end_utc.strftime("%Y-%m-%dT%H:%M:%S.999Z")
         }
 
         domain = url.split("/")[2]
@@ -77,7 +71,7 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
         game = item.get("gameName", "Unknown")
         try:
             raw_price = item.get("price", "0")
-            # Loại bỏ các ký tự chữ, giữ lại số và dấu chấm phân tách thập phân
+            # Chuẩn hóa chuỗi số tiền tệ phức tạp (Ví dụ: "0,49 US$" -> 0.49)
             clean_str = re.sub(r'[^\d.,]', '', raw_price.strip())
             if ',' in clean_str and '.' not in clean_str:
                 clean_str = clean_str.replace(',', '.')
@@ -94,9 +88,7 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
         result[game]["count"] += count
         total += money
 
-    result = dict(sorted(result.items(), key=lambda x: x[1]["price"], reverse=True))
-    return result, total
-
+    return dict(sorted(result.items(), key=lambda x: x[1]["price"], reverse=True)), total
 
 @app.route("/")
 def index():
@@ -112,23 +104,27 @@ def index():
         return wallet["id"], res, tot
 
     all_results = {}
+    all_totals = {}
+    
     with ThreadPoolExecutor(max_workers=13) as executor:
         futures = [executor.submit(worker, w) for w in WALLETS_CONFIG]
         for future in futures:
             w_id, res, tot = future.result()
             all_results[f"result{w_id}"] = res
-            all_results[f"total{w_id}"] = tot
+            all_totals[f"total{w_id}"] = tot
 
-    grand_total = sum(all_results[f"total{i}"] for i in range(1, 14))
+    grand_total = sum(all_totals[f"total{i}"] for i in range(1, 14))
 
     return render_template(
         "index.html",
         grand_total=grand_total,
         start_date=start_date, end_date=end_date,
         start_time=start_time, end_time=end_time,
-        **all_results
+        total1=all_totals.get("total1", 0), result1=all_results.get("result1", {}),
+        total2=all_totals.get("total2", 0), result2=all_results.get("result2", {}),
+        total3=all_totals.get("total3", 0), result3=all_results.get("result3", {}),
+        all_results=all_results, all_totals=all_totals
     )
-
 
 if __name__ == "__main__":
     app.run(debug=True)

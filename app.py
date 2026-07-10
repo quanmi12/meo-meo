@@ -25,23 +25,16 @@ WALLETS_CONFIG = [
 
 def fetch_api(url, user, start_date, end_date, start_time, end_time):
     try:
-        # Loại bỏ các kí tự khoảng trắng thừa
         st = start_time.strip()
         et = end_time.strip()
-
-        # Parse chuỗi từ giao diện (đang chạy chuẩn múi giờ VN)
         start_local = datetime.strptime(f"{start_date} {st}", "%Y-%m-%d %H:%M:%S")
         end_local = datetime.strptime(f"{end_date} {et}", "%Y-%m-%d %H:%M:%S")
 
-        # Trừ đi 7 tiếng để ép về định dạng UTC chuẩn hóa cho API backend của họ nhận diện
         start_utc = start_local - timedelta(hours=7)
         end_utc = end_local - timedelta(hours=7)
 
         payload = {
-            "shopId": None, 
-            "packageName": "", 
-            "assigned": user, 
-            "productId": "",
+            "shopId": None, "packageName": "", "assigned": user, "productId": "",
             "action": "import_token", 
             "startDate": start_utc.strftime("%Y-%m-%dT%H:%M:%S.000Z"), 
             "endDate": end_utc.strftime("%Y-%m-%dT%H:%M:%S.999Z")
@@ -53,15 +46,14 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
             "Content-Type": "application/json",
             "Origin": f"https://{domain}",
             "Referer": f"https://{domain}/thong-ke-nap?user={user}",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
             "X-Requested-With": "XMLHttpRequest"
         }
 
-        r = requests.post(url, json=payload, headers=headers, timeout=12)
+        r = requests.post(url, json=payload, headers=headers, timeout=15)
         r.raise_for_status()
         data = r.json().get("data", [])
-    except Exception as e:
-        print(f"API ERROR ({user}):", e)
+    except:
         data = []
 
     result = defaultdict(lambda: {"price": 0, "count": 0})
@@ -71,7 +63,6 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
         game = item.get("gameName", "Unknown")
         try:
             raw_price = item.get("price", "0")
-            # Chuẩn hóa chuỗi số tiền tệ phức tạp (Ví dụ: "0,49 US$" -> 0.49)
             clean_str = re.sub(r'[^\d.,]', '', raw_price.strip())
             if ',' in clean_str and '.' not in clean_str:
                 clean_str = clean_str.replace(',', '.')
@@ -93,7 +84,6 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
 @app.route("/")
 def index():
     now_vn = datetime.utcnow() + timedelta(hours=7)
-
     start_date = request.args.get("start_date") or now_vn.strftime("%Y-%m-%d")
     end_date = request.args.get("end_date") or now_vn.strftime("%Y-%m-%d")
     start_time = request.args.get("start_time") or "00:00:00"
@@ -106,6 +96,7 @@ def index():
     all_results = {}
     all_totals = {}
     
+    # Chạy đa luồng quét đủ cả 13 ví một lúc không thiếu ví nào
     with ThreadPoolExecutor(max_workers=13) as executor:
         futures = [executor.submit(worker, w) for w in WALLETS_CONFIG]
         for future in futures:
@@ -113,17 +104,29 @@ def index():
             all_results[f"result{w_id}"] = res
             all_totals[f"total{w_id}"] = tot
 
-    grand_total = sum(all_totals[f"total{i}"] for i in range(1, 14))
+    # Chia tiền tổng thành 2 nhóm chuẩn chỉnh
+    ht_total = sum(all_totals.get(f"total{i}", 0) for i in range(1, 4))
+    thanh_total = sum(all_totals.get(f"total{i}", 0) for i in range(4, 14))
 
     return render_template(
         "index.html",
-        grand_total=grand_total,
+        ht_total=ht_total,
+        thanh_total=thanh_total,
         start_date=start_date, end_date=end_date,
         start_time=start_time, end_time=end_time,
         total1=all_totals.get("total1", 0), result1=all_results.get("result1", {}),
         total2=all_totals.get("total2", 0), result2=all_results.get("result2", {}),
         total3=all_totals.get("total3", 0), result3=all_results.get("result3", {}),
-        all_results=all_results, all_totals=all_totals
+        total4=all_totals.get("total4", 0), result4=all_results.get("result4", {}),
+        total5=all_totals.get("total5", 0), result5=all_results.get("result5", {}),
+        total6=all_totals.get("total6", 0), result6=all_results.get("result6", {}),
+        total7=all_totals.get("total7", 0), result7=all_results.get("result7", {}),
+        total8=all_totals.get("total8", 0), result8=all_results.get("result8", {}),
+        total9=all_totals.get("total9", 0), result9=all_results.get("result9", {}),
+        total10=all_totals.get("total10", 0), result10=all_results.get("result10", {}),
+        total11=all_totals.get("total11", 0), result11=all_results.get("result11", {}),
+        total12=all_totals.get("total12", 0), result12=all_results.get("result12", {}),
+        total13=all_totals.get("total13", 0), result13=all_results.get("result13", {}),
     )
 
 if __name__ == "__main__":

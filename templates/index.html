@@ -8,11 +8,18 @@
     <style>
         body { background-color: #0b111e; color: #ffffff; font-family: 'Segoe UI', Tahoma, sans-serif; }
         .filter-box { background-color: #121824; border-radius: 10px; padding: 15px; margin-bottom: 25px; border: 1px solid #1e2638; }
+        
+        /* CSS 2 Hộp tổng doanh thu riêng biệt */
+        .total-container { display: flex; gap: 15px; margin-bottom: 25px; }
+        .total-box { flex: 1; border-radius: 12px; padding: 15px; text-align: center; border: 1px solid #1e2638; }
+        .box-ht { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border: 2px solid #38bdf8; }
+        .box-thanh { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border: 2px solid #a855f7; }
+        .val-ht { font-size: 2.2rem; font-weight: 900; color: #38bdf8; }
+        .val-thanh { font-size: 2.2rem; font-weight: 900; color: #a855f7; }
+
         .wallet-card { background-color: #121824; border-radius: 12px; padding: 20px; margin-bottom: 25px; border: 1px solid #1e2638; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); }
         .wallet-title { font-size: 1.3rem; font-weight: 700; color: #e2e8f0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e2638; padding-bottom: 10px; margin-bottom: 15px; }
         .wallet-total { color: #00ff88; font-size: 1.6rem; font-weight: 800; }
-        .grand-total-box { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border: 2px solid #00ff88; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 30px; }
-        .grand-total-val { font-size: 3rem; font-weight: 900; color: #00ff88; text-shadow: 0 0 10px rgba(0, 255, 136, 0.3); }
         .game-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #1a2333; }
         .game-name { color: #94a3b8; }
         .game-price { font-weight: 600; color: #f43f5e; }
@@ -28,9 +35,15 @@
 
 <div class="container py-4">
     
-    <div class="grand-total-box">
-        <div class="text-uppercase small fw-bold mb-1 text-muted">Tổng Doanh Thu Tất Cả Ví</div>
-        <div class="grand-total-val">${{ "%.2f"|format(grand_total) }}</div>
+    <div class="total-container">
+        <div class="total-box box-ht">
+            <div class="text-uppercase small fw-bold text-muted mb-1">💼 Tổng Ví Hệ HT / HUNG</div>
+            <div class="val-ht">${{ "%.2f"|format(ht_total) }}</div>
+        </div>
+        <div class="total-box box-thanh">
+            <div class="text-uppercase small fw-bold text-muted mb-1">💸 Tổng Ví Hệ THANH (1-10)</div>
+            <div class="val-thanh">${{ "%.2f"|format(thanh_total) }}</div>
+        </div>
     </div>
 
     <div class="filter-box">
@@ -59,7 +72,7 @@
 
     <div class="group-heading">💼 Khu vực Ví Hệ HT / HUNG</div>
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-4">
             <div class="wallet-card">
                 <div class="wallet-title">
                     <span>👑 Phép Thuật Win</span>
@@ -76,7 +89,7 @@
             </div>
         </div>
 
-        <div class="col-md-6">
+        <div class="col-md-4">
             <div class="wallet-card">
                 <div class="wallet-title">
                     <span>👑 Enchatit</span>
@@ -93,7 +106,7 @@
             </div>
         </div>
 
-        <div class="col-md-6">
+        <div class="col-md-4">
             <div class="wallet-card">
                 <div class="wallet-title">
                     <span>👑 Grakk Mèo Thần Tài</span>
@@ -115,25 +128,86 @@
 
     <div class="group-heading thanh-team">💸 Khu vực Ví Hệ THANH (1 - 10)</div>
     <div class="row">
-        {% for i in range(4, 14) %}
         <div class="col-md-6">
             <div class="wallet-card">
-                <div class="wallet-title">
-                    <span>👑 Ví thanh{{ i - 3 }}</span>
-                    <span class="wallet-total">${{ "%.2f"|format(all_totals['total' ~ i]) }}</span>
-                </div>
+                <div class="wallet-title"><span>👑 Ví thanh1</span><span class="wallet-total">${{ "%.2f"|format(total4) }}</span></div>
                 <div class="wallet-body">
-                    {% set current_result = all_results['result' ~ i] %}
-                    {% if current_result %}{% for game, info in current_result.items() %}
-                    <div class="game-item">
-                        <span class="game-name">{{ game }} <span class="game-count">({{ info.count }} lượt)</span></span>
-                        <span class="game-price">${{ "%.2f"|format(info.price) }}</span>
-                    </div>
-                    {% endfor %}{% else %}<div class="text-muted text-center py-2 small">Không có dữ liệu</div>{% endif %}
+                    {% if result4 %}{% for game, info in result4.items() %}<div class="game-item"><span class="game-name">{{ game }} <span class="game-count">({{ info.count }} lượt)</span></span><span class="game-price">${{ "%.2f"|format(info.price) }}</span></div>{% endfor %}{% else %}<div class="text-muted text-center py-2 small">Không có dữ liệu</div>{% endif %}
                 </div>
             </div>
         </div>
-        {% endfor %}
+        <div class="col-md-6">
+            <div class="wallet-card">
+                <div class="wallet-title"><span>👑 Ví thanh2</span><span class="wallet-total">${{ "%.2f"|format(total5) }}</span></div>
+                <div class="wallet-body">
+                    {% if result5 %}{% for game, info in result5.items() %}<div class="game-item"><span class="game-name">{{ game }} <span class="game-count">({{ info.count }} lượt)</span></span><span class="game-price">${{ "%.2f"|format(info.price) }}</span></div>{% endfor %}{% else %}<div class="text-muted text-center py-2 small">Không có dữ liệu</div>{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="wallet-card">
+                <div class="wallet-title"><span>👑 Ví thanh3</span><span class="wallet-total">${{ "%.2f"|format(total6) }}</span></div>
+                <div class="wallet-body">
+                    {% if result6 %}{% for game, info in result6.items() %}<div class="game-item"><span class="game-name">{{ game }} <span class="game-count">({{ info.count }} lượt)</span></span><span class="game-price">${{ "%.2f"|format(info.price) }}</span></div>{% endfor %}{% else %}<div class="text-muted text-center py-2 small">Không có dữ liệu</div>{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="wallet-card">
+                <div class="wallet-title"><span>👑 Ví thanh4</span><span class="wallet-total">${{ "%.2f"|format(total7) }}</span></div>
+                <div class="wallet-body">
+                    {% if result7 %}{% for game, info in result7.items() %}<div class="game-item"><span class="game-name">{{ game }} <span class="game-count">({{ info.count }} lượt)</span></span><span class="game-price">${{ "%.2f"|format(info.price) }}</span></div>{% endfor %}{% else %}<div class="text-muted text-center py-2 small">Không có dữ liệu</div>{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="wallet-card">
+                <div class="wallet-title"><span>👑 Ví thanh5</span><span class="wallet-total">${{ "%.2f"|format(total8) }}</span></div>
+                <div class="wallet-body">
+                    {% if result8 %}{% for game, info in result8.items() %}<div class="game-item"><span class="game-name">{{ game }} <span class="game-count">({{ info.count }} lượt)</span></span><span class="game-price">${{ "%.2f"|format(info.price) }}</span></div>{% endfor %}{% else %}<div class="text-muted text-center py-2 small">Không có dữ liệu</div>{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="wallet-card">
+                <div class="wallet-title"><span>👑 Ví thanh6</span><span class="wallet-total">${{ "%.2f"|format(total9) }}</span></div>
+                <div class="wallet-body">
+                    {% if result9 %}{% for game, info in result9.items() %}<div class="game-item"><span class="game-name">{{ game }} <span class="game-count">({{ info.count }} lượt)</span></span><span class="game-price">${{ "%.2f"|format(info.price) }}</span></div>{% endfor %}{% else %}<div class="text-muted text-center py-2 small">Không có dữ liệu</div>{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="wallet-card">
+                <div class="wallet-title"><span>👑 Ví thanh7</span><span class="wallet-total">${{ "%.2f"|format(total10) }}</span></div>
+                <div class="wallet-body">
+                    {% if result10 %}{% for game, info in result10.items() %}<div class="game-item"><span class="game-name">{{ game }} <span class="game-count">({{ info.count }} lượt)</span></span><span class="game-price">${{ "%.2f"|format(info.price) }}</span></div>{% endfor %}{% else %}<div class="text-muted text-center py-2 small">Không có dữ liệu</div>{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="wallet-card">
+                <div class="wallet-title"><span>👑 Ví thanh8</span><span class="wallet-total">${{ "%.2f"|format(total11) }}</span></div>
+                <div class="wallet-body">
+                    {% if result11 %}{% for game, info in result11.items() %}<div class="game-item"><span class="game-name">{{ game }} <span class="game-count">({{ info.count }} lượt)</span></span><span class="game-price">${{ "%.2f"|format(info.price) }}</span></div>{% endfor %}{% else %}<div class="text-muted text-center py-2 small">Không có dữ liệu</div>{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="wallet-card">
+                <div class="wallet-title"><span>👑 Ví thanh9</span><span class="wallet-total">${{ "%.2f"|format(total12) }}</span></div>
+                <div class="wallet-body">
+                    {% if result12 %}{% for game, info in result12.items() %}<div class="game-item"><span class="game-name">{{ game }} <span class="game-count">({{ info.count }} lượt)</span></span><span class="game-price">${{ "%.2f"|format(info.price) }}</span></div>{% endfor %}{% else %}<div class="text-muted text-center py-2 small">Không có dữ liệu</div>{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="wallet-card">
+                <div class="wallet-title"><span>👑 Ví thanh10</span><span class="wallet-total">${{ "%.2f"|format(total13) }}</span></div>
+                <div class="wallet-body">
+                    {% if result13 %}{% for game, info in result13.items() %}<div class="game-item"><span class="game-name">{{ game }} <span class="game-count">({{ info.count }} lượt)</span></span><span class="game-price">${{ "%.2f"|format(info.price) }}</span></div>{% endfor %}{% else %}<div class="text-muted text-center py-2 small">Không có dữ liệu</div>{% endif %}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 </body>

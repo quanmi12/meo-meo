@@ -50,8 +50,7 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
             "X-Requested-With": "XMLHttpRequest"
         }
 
-        # Hạ timeout xuống 5 giây để load web nhanh hơn, không bị treo khi API nghẽn
-        r = requests.post(url, json=payload, headers=headers, timeout=5)
+        r = requests.post(url, json=payload, headers=headers, timeout=15)
         r.raise_for_status()
         data = r.json().get("data", [])
     except:
@@ -64,55 +63,13 @@ def fetch_api(url, user, start_date, end_date, start_time, end_time):
         game = item.get("gameName", "Unknown")
         try:
             raw_price = item.get("price", "0")
-            
-            # Nhận diện chính xác loại tiền tệ gốc từ API
-            is_vnd = "đ" in raw_price or "VND" in raw_price or "vnd" in raw_price
-            
             clean_str = re.sub(r'[^\d.,]', '', raw_price.strip())
-            
-            if is_vnd:
-                # Nếu là tiền Việt (ví dụ: 5,000), loại bỏ hẳn dấu phẩy/chấm để thành số nguyên 5000
-                clean_str = clean_str.replace(',', '').replace('.', '')
-                price = float(clean_str)
-            else:
-                # Nếu là tiền USD (ví dụ: 2,99), chuyển dấu phẩy thành dấu chấm toán học 2.99
-                if ',' in clean_str and '.' not in clean_str:
-                    clean_str = clean_str.replace(',', '.')
-                elif ',' in clean_str and '.' in clean_str:
-                    clean_str = clean_str.replace(',', '')
-                price = float(clean_str)
-                
+            if ',' in clean_str and '.' not in clean_str:
+                clean_str = clean_str.replace(',', '.')
+            elif ',' in clean_str and '.' in clean_str:
+                clean_str = clean_str.replace(',', '')
+            price = float(clean_str)
             count = int(item.get("count", 0))
-            
-            # =========================================================================
-            # TỰ ĐỘNG ÉP MỐC GIÁ TIỀN VIỆT (VND) SANG USD GỐC CHUẨN 100%
-            # =========================================================================
-            if price > 100:  
-                vnd_to_usd_mapping = {
-                    5000: 0.19,     # Gói đ5,000 -> Đổi chuẩn thành $0.19
-                    8000: 0.29,     # Gói đ8,000 -> Đổi chuẩn thành $0.29
-                    10000: 0.39,    
-                    12000: 0.49,    
-                    15000: 0.59,    
-                    25000: 0.99,    # Gói đ25,000 -> Đổi chuẩn thành $0.99
-                    49000: 1.99,    
-                    79000: 2.99,    
-                    99000: 3.99,    
-                    129000: 4.99,   
-                    249000: 9.99,   
-                    499000: 19.99,  
-                    749000: 29.99,  
-                    1249000: 49.99, 
-                    2499000: 99.99, 
-                }
-                
-                vnd_price_int = int(round(price))
-                if vnd_price_int in vnd_to_usd_mapping:
-                    price = vnd_to_usd_mapping[vnd_price_int]
-                else:
-                    price = price / 25000.0  # Phòng hờ gói lạ
-            # =========================================================================
-            
         except:
             price = 0
             count = 0
@@ -139,6 +96,7 @@ def index():
     all_results = {}
     all_totals = {}
     
+    # Chạy đa luồng quét đủ cả 13 ví một lúc không thiếu ví nào
     with ThreadPoolExecutor(max_workers=13) as executor:
         futures = [executor.submit(worker, w) for w in WALLETS_CONFIG]
         for future in futures:
@@ -146,6 +104,7 @@ def index():
             all_results[f"result{w_id}"] = res
             all_totals[f"total{w_id}"] = tot
 
+    # Chia tiền tổng thành 2 nhóm chuẩn chỉnh
     ht_total = sum(all_totals.get(f"total{i}", 0) for i in range(1, 4))
     thanh_total = sum(all_totals.get(f"total{i}", 0) for i in range(4, 14))
 
